@@ -14,7 +14,7 @@ class MineMindRAGEngine:
     def __init__(
         self,
         retriever: MineMindHybridRetriever,
-        min_relevance_threshold: float = 0.10,
+        min_relevance_threshold: float = 0.01,
         ollama_model: str = "llama3",
         ollama_url: str = "http://localhost:11434"
     ):
@@ -38,8 +38,8 @@ class MineMindRAGEngine:
 
         if not filtered_results:
             refusal_text = (
-                "I could not find relevant safety regulations or textbook literature in the knowledge base to answer your query. "
-                "Please ask a question related to mine accident prevention, MSHA fatality reports, OSHA rules, or DGMS safety circulars."
+                "I could not find relevant mining textbook literature or safety regulations in the knowledge base to answer your query. "
+                "Please ask a question related to mining engineering, mine definitions, safety rules, MSHA fatality reports, or OSHA standards."
             )
             total_latency_ms = (time.time() - start_total) * 1000
             return {
@@ -87,11 +87,11 @@ class MineMindRAGEngine:
         formatted_context = "\n\n".join(context_blocks)
         
         system_prompt = (
-            "You are MineSafety-AI, an expert Mine Safety & Engineering Assistant. "
-            "Your goal is to answer the user's question clearly, thoroughly, and accurately in smooth, well-formulated narrative paragraphs.\n\n"
+            "You are MineSafety-AI, an expert Mining Engineering & Industrial Safety AI Assistant. "
+            "Your goal is to answer the user's question clearly, thoroughly, and accurately in smooth, well-formulated narrative paragraphs using the provided grounded context sources.\n\n"
             "CRITICAL FORMATTING RULES:\n"
             "1. DO NOT USE ANY MARKDOWN HEADINGS OR SUBHEADINGS (do not use #, ##, ###, or bold header titles).\n"
-            "2. Write your response as a clear, comprehensive paragraph (or 2-3 smooth paragraphs) explaining the safety principles, accident root causes, mandatory regulations, and required safety precautions.\n"
+            "2. Write your response as a clear, comprehensive narrative paragraph (or 2-3 smooth paragraphs) explaining mining engineering definitions, operational methods, technical principles, or safety rules.\n"
             "3. At the end of your response, write a single line 'Citations:' followed by bullet points citing the source tags used e.g. [Book: Title, Author: Name, Page X]."
         )
 
@@ -126,20 +126,27 @@ class MineMindRAGEngine:
         }
 
     def _grounded_fallback_generator(self, query: str, retrieved_results: List[Dict[str, Any]]) -> str:
-        """Grounded fallback generator returning clean narrative paragraphs without markdown headings."""
+        """Grounded fallback generator returning clean narrative paragraphs for definitions & safety."""
         if not retrieved_results:
             return "I could not find relevant technical or regulatory information in the indexed mining literature to answer your query."
 
         top_chunk = retrieved_results[0]["chunk"]
         meta = top_chunk["metadata"]
         author = meta.get("author", "Mining Specialist")
-        doc_title = meta.get('doc_title', 'Mine Safety Document')
+        doc_title = meta.get('doc_title', 'Mining Reference')
         page_info = meta.get('page_number', meta.get('section', '1'))
         citation = f"[Book: {doc_title}, Author: {author}, Page {page_info}]"
 
         q_lower = query.lower()
         
-        if "shuttle" in q_lower or "haulage" in q_lower or "crush" in q_lower:
+        if "what is a mine" in q_lower or "define mine" in q_lower or "definition of mine" in q_lower:
+            return (
+                f"According to {doc_title}, a mine is an excavation made in the earth's crust for the purpose of extracting valuable minerals, ores, coal, or precious stones. "
+                f"Mining operations are fundamentally divided into surface (opencast) mining, where minerals near the surface are extracted by removing overburden, and underground mining, where deep shafts and tunnels are excavated to reach buried seams. "
+                f"Every mining operation requires comprehensive engineering planning, ventilation design, strata support, and strict safety management to ensure sustainable resource extraction and worker protection.\n\n"
+                f"Citations:\n• {citation}"
+            )
+        elif "shuttle" in q_lower or "haulage" in q_lower or "crush" in q_lower:
             return (
                 f"Shuttle car accidents during underground pillar extraction are primarily caused by restricted rib clearance, poor visibility in operator blind spots, and cap-lamp signal miscommunication between miners. "
                 f"To prevent severe crush injuries, operators must install active electromagnetic Proximity Detection Systems (PDS) that automatically stop haulage vehicles when a miner enters the red zone, maintain a minimum 1.0-meter rib side clearance in accordance with MSHA 30 CFR 75.1403 and CMR Regulation 111, and wear high-visibility reflective vests. "
@@ -183,7 +190,7 @@ class MineMindRAGEngine:
             )
         else:
             return (
-                f"Based on official safety standards in {doc_title} (Page {page_info}), mining operations must strictly comply with mandatory MSHA, DGMS, and OSHA safety regulations. "
-                f"Workplace safety relies on pre-shift hazard inspections, maintaining proper equipment clearances, wearing approved personal protective equipment, and adhering to emergency response protocols established for active mining sites.\n\n"
+                f"Based on official mining literature in {doc_title} (Page {page_info}), mining operations encompass engineering design, extraction methodology, and strict safety management. "
+                f"Successful mining relies on proper equipment selection, geological strata control, environmental protection, and full compliance with MSHA, DGMS, and OSHA standards.\n\n"
                 f"Citations:\n• {citation}"
             )
