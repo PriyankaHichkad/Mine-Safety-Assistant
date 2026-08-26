@@ -77,6 +77,13 @@ st.markdown("""
         border-bottom-color: #2563eb !important;
         font-weight: 700 !important;
     }
+    /* Disable Streamlit Default Page Dimming / Grey Overlay During Rerun */
+    .stApp [data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+    div[data-st-mode="opaque"] {
+        opacity: 1 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -91,7 +98,8 @@ groq_key_secret = os.getenv("GROQ_API_KEY", "")
 if not groq_key_secret and hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
     groq_key_secret = st.secrets["GROQ_API_KEY"]
 
-# LangGraph Safety Engine Initialization with Silent Backend Logging
+# LangGraph Safety Engine Cached Initialization (Instant Load, Zero Grey Screen)
+@st.cache_resource(show_spinner=False)
 def load_safety_engine(groq_key: str):
     db_path = "./data/qdrant_db"
     bm25_path = "./data/bm25_index.pkl"
