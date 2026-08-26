@@ -1,0 +1,5 @@
+outs:
+- md5: 0fb1300b5bbf9e21129cfcf26f90946f
+  size: 2268
+  hash: md5
+  path: mining_golden_dataset.json

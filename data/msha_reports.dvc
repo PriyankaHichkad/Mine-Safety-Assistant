@@ -1,0 +1,6 @@
+outs:
+- md5: 7f9837b10d6563f2eb1dab03c4665fcb.dir
+  size: 11177
+  nfiles: 9
+  hash: md5
+  path: msha_reports

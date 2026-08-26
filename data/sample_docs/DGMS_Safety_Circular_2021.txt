@@ -1,0 +1,13 @@
+DOCUMENT_TITLE: DGMS Technical & Safety Circular No. 3 of 2021
+CATEGORY: Opencast Mine Safety & Slope Stability Guidelines
+ISSUER: Director General of Mines Safety, Dhanbad, Jharkhand
+
+--- SECTION 1: Opencast Slope Stability Monitoring ---
+(1) All opencast coal and metalliferous mines with pit depth exceeding 50 metres shall install continuous Slope Stability Radar (SSR) or automated Total Station prism monitoring systems.
+(2) Slope mass rating (SMR) and Kinematic analysis of benches shall be performed prior to monsoon season every year by an accredited geotechnical research institute (e.g. CIMFR / IIT BHU).
+(3) The overall slope angle for soft overburden benches shall not exceed 38 degrees, and bench height shall not exceed the reach of the primary excavator shovel/dumper combination (maximum 12 to 15 metres).
+
+--- SECTION 2: Haul Road Safety Standards ---
+(1) Gradient of haul roads in opencast mines shall not be steeper than 1 in 16 (6.25%).
+(2) Width of haul road shall not be less than 3 times the width of the widest vehicle plying on the road plus 5 metres for two-way traffic.
+(3) Parapet walls or earthen berms of height not less than the tyre radius of the largest dumper deployed (minimum 1.5 metres) shall be maintained along all elevated haul roads and dump edges.

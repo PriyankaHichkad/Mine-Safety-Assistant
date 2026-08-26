@@ -1,0 +1,5 @@
+[core]
+    no_scm = True
+    remote = dagshub
+['remote "dagshub"']
+    url = https://dagshub.com/PriyankaHichkad/Mine-Safety-Assistant.dvc

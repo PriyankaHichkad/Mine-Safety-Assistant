@@ -1,0 +1,5 @@
+outs:
+- md5: c2bf2606be6da18c3b3b5d23ccd1a1dd
+  size: 1007
+  hash: md5
+  path: book_authors.json
