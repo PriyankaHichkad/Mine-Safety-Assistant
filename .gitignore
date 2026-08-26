@@ -1,0 +1,34 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# DVC internal cache & lock files
+.dvc/cache/
+.dvc/tmp/
+
+# Ignore ALL data contents except .dvc files and json metadata
+data/*
+!data/*.dvc
+!data/book_authors.json
+!data/sample_docs/
+
+# Local logs & traces
+data/production_audit_logs.jsonl
+*.log
+
+# Environment secret files
+.env
+.env.*
+*.env
+
+# OS generated files
+.DS_Store
+Thumbs.db

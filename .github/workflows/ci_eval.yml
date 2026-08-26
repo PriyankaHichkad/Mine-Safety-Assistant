@@ -1,0 +1,46 @@
+name: MineSafety-AI Quality Gate & Evaluation CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  eval_quality_gate:
+    name: Phase 1 Pre-Deployment Quality Evaluation Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install Dependencies & DVC
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "dvc[s3]"
+
+      - name: Generate MSHA & OSHA Regulatory Data
+        run: |
+          python scripts/scrape_msha_accidents.py
+
+      - name: Pull Datasets with DVC (If Remote Credentialed)
+        env:
+          DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_USER_TOKEN }}
+        run: |
+          dvc pull || echo "DVC remote optional, fallback data generated locally..."
+
+      - name: Ingest Knowledge Base into Vector Store
+        run: |
+          python scripts/ingest_docs.py
+
+      - name: Run CI Evaluation Quality Gate
+        run: |
+          python scripts/run_eval_ci.py
