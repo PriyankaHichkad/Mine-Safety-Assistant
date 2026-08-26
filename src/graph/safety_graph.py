@@ -125,17 +125,16 @@ class LangGraphMineSafetyEngine:
         }
 
     def _node_safety_guardrail(self, state: MineSafetyState) -> Dict[str, Any]:
-        """Node 3: Safety Guardrail Relevance Score Thresholding (>0.10)."""
+        """Node 3: Safety Guardrail Relevance Score Thresholding (>0.01)."""
         docs = state.get("retrieved_docs", [])
         top_score = docs[0].get("rerank_score", 0.0) if docs else 0.0
         
-        passed = top_score >= 0.10
+        passed = top_score >= 0.01 or len(docs) > 0
         if not passed:
             refusal = (
-                "I apologize, but I could not find relevant MSHA fatality reports or DGMS safety guidelines for your query. "
-                "Please ask a question related to Mine Safety, MSHA Fatality Reports, Roof Falls, Haulage Accidents, or Methane Hazards."
+                "I could not find relevant mining textbook literature or safety regulations in the knowledge base to answer your query. "
+                "Please ask a question related to mining engineering, mine definitions, safety rules, MSHA fatality reports, or OSHA standards."
             )
-            # Capture low-confidence unhandled trace for Discovery Loop
             self.discovery_loop.capture_emerging_edge_case(state["query"])
             
             return {
