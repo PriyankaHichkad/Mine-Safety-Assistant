@@ -91,8 +91,7 @@ groq_key_secret = os.getenv("GROQ_API_KEY", "")
 if not groq_key_secret and hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
     groq_key_secret = st.secrets["GROQ_API_KEY"]
 
-# Cached LangGraph Safety Engine Initialization with Silent Backend Logging
-@st.cache_resource
+# LangGraph Safety Engine Initialization with Silent Backend Logging
 def load_safety_engine(groq_key: str):
     db_path = "./data/qdrant_db"
     bm25_path = "./data/bm25_index.pkl"
