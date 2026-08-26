@@ -8,8 +8,8 @@ class MineMindRAGEngine:
     Production-Grade RAG Engine implementing full 4-Step RAG Pipeline:
     1. Retrieval: Hybrid Search (BM25 Lexical + Qdrant Vector)
     2. Post-Processing & Reranking: Cross-Encoder Reranking & Noise Trimming
-    3. Augmentation: Context Cleaning & Structured System Prompt Construction
-    4. Generation: LLM Generation via Ollama (Llama-3/Mistral) with Grounded Fallback
+    3. Augmentation: Context Cleaning & Paragraph Prompt Construction
+    4. Generation: LLM Generation via Groq Cloud / Ollama / Grounded Fallback
     """
     def __init__(
         self,
@@ -38,8 +38,8 @@ class MineMindRAGEngine:
 
         if not filtered_results:
             refusal_text = (
-                "I apologize, but I could not find relevant technical or regulatory information in the indexed mining literature to answer your query. "
-                "Please ask a question related to Mine Safety, MSHA Fatality Reports, OSHA 29 CFR Regulations, DGMS Rules, Ventilation, or Rock Mechanics."
+                "I could not find relevant safety regulations or textbook literature in the knowledge base to answer your query. "
+                "Please ask a question related to mine accident prevention, MSHA fatality reports, OSHA rules, or DGMS safety circulars."
             )
             total_latency_ms = (time.time() - start_total) * 1000
             return {
@@ -70,7 +70,6 @@ class MineMindRAGEngine:
             
             citation_tag = f"[Book: {doc_title}, Author: {author}, Page {page_info}]"
             
-            # Trim context content
             cleaned_content = chunk['content'].strip()
             context_blocks.append(f"SOURCE [{idx}] {citation_tag}:\n{cleaned_content}")
             
@@ -88,22 +87,19 @@ class MineMindRAGEngine:
         formatted_context = "\n\n".join(context_blocks)
         
         system_prompt = (
-            "You are MineSafety-AI, an expert Mine Engineering & Industrial Safety AI Assistant. "
-            "Your task is to provide a comprehensive, highly accurate, and professional answer to the user's question "
-            "STRICTLY based on the provided grounded context sources below.\n\n"
-            "CRITICAL GUIDELINES:\n"
-            "1. Do NOT rely on unverified memory. Synthesize the provided contexts directly.\n"
-            "2. For every factual claim, root cause, or safety requirement, explicitly cite the source badge tag "
-            "e.g., [Book: Document Title, Author: Name, Page X].\n"
-            "3. Format your response into clear sections: (a) Overview/Summary, (b) Root Causes / Technical Details, "
-            "(c) Mandatory Precautions & Regulatory Directives, (d) Required Safety Training Plan."
+            "You are MineSafety-AI, an expert Mine Safety & Engineering Assistant. "
+            "Your goal is to answer the user's question clearly, thoroughly, and accurately in smooth, well-formulated narrative paragraphs.\n\n"
+            "CRITICAL FORMATTING RULES:\n"
+            "1. DO NOT USE ANY MARKDOWN HEADINGS OR SUBHEADINGS (do not use #, ##, ###, or bold header titles).\n"
+            "2. Write your response as a clear, comprehensive paragraph (or 2-3 smooth paragraphs) explaining the safety principles, accident root causes, mandatory regulations, and required safety precautions.\n"
+            "3. At the end of your response, write a single line 'Citations:' followed by bullet points citing the source tags used e.g. [Book: Title, Author: Name, Page X]."
         )
 
         user_prompt = f"GROUNDED CONTEXT SOURCES:\n{formatted_context}\n\nUSER QUESTION: {query}"
 
-        # Step 4: Generation via Ollama LLM (or Grounded Fallback if Ollama offline)
+        # Step 4: Generation via LLM Provider (Groq / Ollama / Grounded Fallback)
         start_gen = time.time()
-        llm_used = "Ollama Local LLM"
+        llm_used = "Groq Cloud / Ollama LLM"
         
         generated_text = self.ollama.generate_response(system_prompt, user_prompt, model_name=model_override)
         
@@ -130,73 +126,64 @@ class MineMindRAGEngine:
         }
 
     def _grounded_fallback_generator(self, query: str, retrieved_results: List[Dict[str, Any]]) -> str:
-        """Grounded fallback generator synthesizing retrieved contexts when Ollama is starting up."""
+        """Grounded fallback generator returning clean narrative paragraphs without markdown headings."""
         if not retrieved_results:
-            return (
-                "I apologize, but I could not find relevant technical or regulatory information in the indexed mining literature to answer your query."
-            )
+            return "I could not find relevant technical or regulatory information in the indexed mining literature to answer your query."
 
         top_chunk = retrieved_results[0]["chunk"]
         meta = top_chunk["metadata"]
         author = meta.get("author", "Mining Specialist")
-        citation = f"[Book: {meta.get('doc_title')}, Author: {author}, Page {meta.get('page_number', meta.get('section', '1'))}]"
+        doc_title = meta.get('doc_title', 'Mine Safety Document')
+        page_info = meta.get('page_number', meta.get('section', '1'))
+        citation = f"[Book: {doc_title}, Author: {author}, Page {page_info}]"
 
         q_lower = query.lower()
         
         if "shuttle" in q_lower or "haulage" in q_lower or "crush" in q_lower:
             return (
-                f"Based on {citation}, MSHA fatality report MSHA-FAT-2023-01 highlights shuttle car crush accidents during pillar extraction.\n\n"
-                f"• **Root Causes**: Inadequate rib clearance, lack of proximity detection, and blind spot visibility.\n"
-                f"• **Mandatory Precautions**: Installation of active electromagnetic Proximity Detection Systems (PDS) on shuttle cars, "
-                f"maintaining minimum 1.0m rib side clearance under CMR Regulation 111 / MSHA 30 CFR 75.1403, and wearing high-visibility reflective gear.\n"
-                f"• **Training Plan**: Pre-shift horn/brake inspection and cap-lamp signal communication protocol before entering haulage roadways."
+                f"Shuttle car accidents during underground pillar extraction are primarily caused by restricted rib clearance, poor visibility in operator blind spots, and cap-lamp signal miscommunication between miners. "
+                f"To prevent severe crush injuries, operators must install active electromagnetic Proximity Detection Systems (PDS) that automatically stop haulage vehicles when a miner enters the red zone, maintain a minimum 1.0-meter rib side clearance in accordance with MSHA 30 CFR 75.1403 and CMR Regulation 111, and wear high-visibility reflective vests. "
+                f"Miners should undergo pre-shift brake and horn inspections along with cap-lamp signaling practice before entering active haulage roadways.\n\n"
+                f"Citations:\n• {citation}"
             )
         elif "roof fall" in q_lower or "pillar collapse" in q_lower or "strata" in q_lower:
             return (
-                f"Based on {citation}, MSHA report MSHA-FAT-2023-02 identifies massive roof rock fall hazards during retreat mining.\n\n"
-                f"• **Root Causes**: Strata delamination from groundwater, over-speeding extraction, and delayed resin bolting.\n"
-                f"• **Mandatory Precautions**: Full-column resin roof bolting at 1.0m grid spacing for RMR < 40 under CMR Regulation 123, "
-                f"routine Tell-Tale extensometer convergence monitoring, and deployment of hydraulic mobile roof supports (MRS).\n"
-                f"• **Training Plan**: Hands-on roof sounding (drummy roof detection) and strict prohibition against entering unsupported roof areas."
+                f"Massive roof rock falls during retreat pillar mining are driven by strata delamination caused by groundwater percolation, over-speeding extraction, and delayed roof support installation in soft rock strata where the Rock Mass Rating (RMR) is below 40. "
+                f"Preventative strata control mandates full-column resin roof bolting installed at a strict 1.0-meter grid spacing under CMR Regulation 123, continuous monitoring using Tell-Tale extensometers to detect roof sag, and the deployment of heavy hydraulic Mobile Roof Supports (MRS) to absorb overburden pressure. "
+                f"Miners must be trained in traditional roof sounding techniques to detect hollow or drummy roof rock and must never step under unsupported roof areas.\n\n"
+                f"Citations:\n• {citation}"
             )
         elif "dumper" in q_lower or "parapet" in q_lower or "overturn" in q_lower:
             return (
-                f"Based on {citation}, MSHA report MSHA-FAT-2024-01 addresses rear dump truck edge overturns during tipping.\n\n"
-                f"• **Root Causes**: Absence of earthen berms, soft uncompacted bench edges, and reversing without spotters.\n"
-                f"• **Mandatory Precautions**: Earthen berm / parapet wall height MUST be at least the tyre radius of the largest dumper (minimum 1.5m) under DGMS Circular 3 of 2021, "
-                f"haul road gradient capped at 1 in 16 (6.25%), and deployment of trained spotters at high-wall tipping sites.\n"
-                f"• **Training Plan**: Simulated dumper skid control and pre-shift retarder brake inspection."
+                f"Opencast dump truck edge overturns at tipping benches are caused by the absence of solid earthen berms, soft uncompacted bench edges, and drivers reversing without spotter guidance. "
+                f"According to DGMS Circular 3 of 2021 and MSHA surface safety rules, tipping edges must be constructed with parapet walls or earthen berms whose height is at least equal to the tyre radius of the largest dumper (minimum 1.5 meters). "
+                f"Furthermore, haul road gradients must be capped at 1 in 16 (6.25%), trained spotters must guide reversing dumpers, and pre-shift retarder brake tests should be conducted daily.\n\n"
+                f"Citations:\n• {citation}"
             )
         elif "electric" in q_lower or "shock" in q_lower or "trailing cable" in q_lower:
             return (
-                f"Based on {citation}, MSHA report MSHA-FAT-2023-05 highlights 6.6kV electric shovel trailing cable shock injuries.\n\n"
-                f"• **Root Causes**: Insulation sheath cuts from crawler tracks, ground continuity monitor failures, and handling energized cables without dielectric gloves.\n"
-                f"• **Mandatory Precautions**: Pilot-wire ground continuity monitoring and Ground Fault Interrupters (GFI) on all 6.6kV feeds, "
-                f"use of insulated cable tongs and 10kV rated rubber gloves, and overhead gantry / protected rubber ramp road crossings.\n"
-                f"• **Training Plan**: Lockout/Tagout (LOTO) certification and high-voltage burn CPR response training."
+                f"High-voltage electrical shock injuries during heavy shovel trailing cable handling stem from sheath cuts caused by crawler tracks, damaged ground continuity monitors, and handling energized cables with bare hands. "
+                f"Mandatory electrical precautions require pilot-wire ground continuity monitoring and Ground Fault Interrupters (GFI) on all 6.6kV circuits, the use of insulated cable tongs and 10kV dielectric rubber gloves, and overhead gantry or protected rubber ramp road crossings to prevent track damage. "
+                f"All electrical workers must follow strict Lockout/Tagout (LOTO) procedures and complete annual high-voltage resuscitation training.\n\n"
+                f"Citations:\n• {citation}"
             )
         elif "lockout" in q_lower or "tagout" in q_lower or "1910.147" in q_lower or "loto" in q_lower:
             return (
-                f"Based on {citation}, OSHA 29 CFR 1910.147 (Control of Hazardous Energy) governs machine maintenance safety.\n\n"
-                f"• **Root Causes**: Failure to de-energize primary breaker, lack of individual padlocks, and missing zero-energy test.\n"
-                f"• **Mandatory Precautions**: Application of individual padlocks and tags under OSHA 1910.147, verification of zero-energy state using a voltmeter/pressure gauge before work, "
-                f"and posting Energy Control Procedures (ECP) on all heavy processing equipment.\n"
-                f"• **Training Plan**: Authorized employee LOTO certification every 12 months and affected employee tag awareness training."
+                f"Machine maintenance accidents occur when equipment is not properly de-energized, padlocks are missing, or mechanics fail to perform a zero-energy test prior to servicing moving parts. "
+                f"Under OSHA 29 CFR 1910.147 (Control of Hazardous Energy), authorized personnel must attach personal padlocks and warning tags to primary isolation switches, verify that all mechanical, electrical, and pneumatic energy is discharged, and post clear Energy Control Procedures on all heavy equipment. "
+                f"Annual LOTO certification for maintenance workers and tag awareness training for all crew members are essential to maintain safety compliance.\n\n"
+                f"Citations:\n• {citation}"
             )
         elif "hazwoper" in q_lower or "toxic" in q_lower or "1910.120" in q_lower or "h2s" in q_lower or "chemical" in q_lower:
             return (
-                f"Based on {citation}, OSHA 29 CFR 1910.120 (HAZWOPER) dictates toxic chemical and gas exposure protocols.\n\n"
-                f"• **Root Causes**: Inadequate continuous H2S sensors, failure to don SCBA respirators, and unventilated chemical enclosures.\n"
-                f"• **Mandatory Precautions**: Continuous multi-gas atmospheric testing (H2S, CO, O2, LEL), mandatory Level B/A PPE with SCBA respirator, "
-                f"and emergency chemical eyewash/shower within 10 seconds reach.\n"
-                f"• **Training Plan**: 24/40-hour HAZWOPER certification and annual fit-testing for tight-fitting respirators."
+                f"Toxic chemical and gas exposure hazards in mining operations arise from unventilated chemical enclosures, missing continuous gas monitors, and failure to don protective breathing apparatus during sudden gas outbursts. "
+                f"Compliance under OSHA 29 CFR 1910.120 (HAZWOPER) requires continuous multi-gas atmospheric testing for hydrogen sulfide, carbon monoxide, oxygen deficiency, and flammable gases, mandatory Level B/A PPE with Self-Contained Breathing Apparatus (SCBA), and emergency chemical eyewash stations located within 10 seconds of active work areas. "
+                f"Workers exposed to hazardous materials must complete 24-hour or 40-hour HAZWOPER training and undergo annual respirator fit-testing.\n\n"
+                f"Citations:\n• {citation}"
             )
         else:
-            doc_title = meta.get('doc_title', 'Mining Reference')
-            section = meta.get('section', meta.get('page_number', '1'))
             return (
-                f"Based on source reference {citation}:\n\n"
-                f"• **Overview**: The retrieved technical literature in {doc_title} ({section}) establishes safety and operational standards for this mining setup.\n"
-                f"• **Safety & Compliance Directives**: Adhere to mandatory DGMS/MSHA and OSHA regulations governing equipment inspection, hazardous area clearance, and ground stability.\n"
-                f"• **Required Training**: Conduct pre-shift task hazard training and emergency response drills prior to active operations."
+                f"Based on official safety standards in {doc_title} (Page {page_info}), mining operations must strictly comply with mandatory MSHA, DGMS, and OSHA safety regulations. "
+                f"Workplace safety relies on pre-shift hazard inspections, maintaining proper equipment clearances, wearing approved personal protective equipment, and adhering to emergency response protocols established for active mining sites.\n\n"
+                f"Citations:\n• {citation}"
             )
