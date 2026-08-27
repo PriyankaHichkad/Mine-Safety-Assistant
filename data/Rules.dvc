@@ -1,0 +1,6 @@
+outs:
+- md5: fd60b65f0b663548376889d22133d004.dir
+  size: 12195917
+  nfiles: 14
+  hash: md5
+  path: Rules

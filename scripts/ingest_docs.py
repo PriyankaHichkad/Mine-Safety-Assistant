@@ -8,7 +8,7 @@ from src.ingestion.chunker import MiningDocumentChunker
 from src.ingestion.indexer import MineMindIndexer
 
 def main():
-    search_directories = ["./data/sample_docs", "./data/pdf_books", "./data/msha_reports", "./data/weebly_books"]
+    search_directories = ["./data/Reports", "./data/Rules", "./data/msha_reports", "./data/pdf_books", "./data/weebly_books"]
     db_path = "./data/qdrant_db"
     bm25_path = "./data/bm25_index.pkl"
 

@@ -18,7 +18,6 @@ __pycache__/
 data/*
 !data/*.dvc
 !data/book_authors.json
-!data/sample_docs/
 
 # Local logs & traces
 data/production_audit_logs.jsonl
