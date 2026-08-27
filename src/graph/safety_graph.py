@@ -170,7 +170,7 @@ class LangGraphMineSafetyEngine:
         if not guard_res["passed"]:
             return {
                 "query": query,
-                "answer": f"🛡️ INPUT GUARDRAIL BLOCKED: {guard_res['reason']}",
+                "answer": guard_res["reason"],
                 "citations": [],
                 "telemetry": {"total_latency_ms": 1.0, "llm_used": "Input Guardrail Refusal"}
             }
