@@ -63,6 +63,7 @@ def run_evaluation_suite():
         golden_dataset = DEFAULT_GOLDEN_DATASET
 
     engine = LangGraphMineSafetyEngine(db_path=db_path, bm25_path=bm25_path)
+    engine.rag_engine.ollama.timeout = 2
 
     passed_count = 0
     grounded_count = 0
