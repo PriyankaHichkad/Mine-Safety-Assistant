@@ -6,7 +6,7 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **4
 
 ---
 
-## 🌟 Key Engineering Features
+## 🌟 Key Features
 
 1. **48,071 Chunk Knowledge Base**:
    - **1,324 Scraped MSHA Fatality Reports (1995–2025)**: Spontaneous heating, mine fires, methane explosions, shuttle car crush injuries, dumper edge overturns, 6.6kV trailing cable shocks, roof falls, and inundation events.
@@ -89,14 +89,3 @@ python scripts/run_eval_ci.py
 python -m streamlit run ui/streamlit_app.py
 ```
 Open **`http://localhost:8501`** in your browser!
-
----
-
-## 📝 Senior-Matched Placement Resume Bullets
-
-1. **Enterprise RAG Architecture & Vector Search**:
-   > *"Designed and deployed an end-to-end Mine Safety RAG pipeline indexing 48,071 semantic chunks across 1,324 scraped MSHA fatality reports, DGMS circulars, and OSHA 29 CFR standards using BM25, Qdrant Vector DB, and BAAI/bge-reranker-base."*
-2. **Mathematical Risk Analytics & LangGraph Engineering**:
-   > *"Built a dynamic statistical risk engine calculating real-time accident occurrence and fatality probabilities ($P(\text{Fatality} \mid \text{Accident}) = \frac{F_{\text{hazard}}}{N_{\text{hazard}}}$) integrated into a 2-step LangGraph StateGraph workflow with 100% citation grounding."*
-3. **MLOps, DVC Cloud Versioning & CI/CD**:
-   > *"Version-controlled 1,400+ compliance PDFs and text corpora via DVC on DAGsHub and established dual GitHub Actions CI/CD quality gates enforcing 100% accuracy and citation SLA benchmarks."*
