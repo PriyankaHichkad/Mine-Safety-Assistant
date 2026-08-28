@@ -241,5 +241,7 @@ Required Action Plan:
             
     print(f"Successfully generated {count} official MSHA fatality reports in {DATA_DIR}!")
 
+generate_msha_dataset = generate_full_msha_library
+
 if __name__ == "__main__":
     generate_full_msha_library()
