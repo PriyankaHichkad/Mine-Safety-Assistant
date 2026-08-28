@@ -1,4 +1,4 @@
-name: MineSafety-AI Quality Gate & Evaluation CI
+name: MineMind RAG Quality & Latency CI Gate
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main, master ]
 
 jobs:
-  eval_quality_gate:
-    name: Phase 1 Pre-Deployment Quality Evaluation Gate
+  rag-evaluation-gate:
+    name: Phase 2 RAG Latency & Quality SLA Gate
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run CI Evaluation Quality Gate
+      - name: Run CI RAG Benchmark Gate
         run: |
           python scripts/run_eval_ci.py
