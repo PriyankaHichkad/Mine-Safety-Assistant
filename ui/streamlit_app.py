@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="Mine Safety Assistant | MSHA & OSHA Compliance Guide",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Custom High-Readability Light Slate Theme CSS
@@ -25,10 +25,9 @@ st.markdown("""
         color: #0f172a !important;
     }
     
-    /* Sidebar Background */
-    [data-testid="stSidebar"] {
-        background-color: #f1f5f9 !important;
-        border-right: 1px solid #cbd5e1 !important;
+    /* Hide Sidebar Completely */
+    [data-testid="stSidebar"], section[data-testid="stSidebar"] {
+        display: none !important;
     }
     
     /* General Paragraph & Text */
@@ -122,26 +121,6 @@ def load_safety_engine(groq_key: str):
 
 engine = load_safety_engine(groq_key_secret)
 
-# Sidebar: User-Centric Simple Navigation
-with st.sidebar:
-    st.title("🛡️ Mine Safety Assistant")
-    st.caption("Official MSHA & OSHA Compliance Guide")
-    st.divider()
-
-    st.success("🟢 Assistant Online & Ready")
-
-    st.subheader("💡 Common Safety Questions")
-    st.markdown("""
-    - What causes shuttle car accidents?
-    - What is mandatory dumper berm height?
-    - Roof bolting rules for soft rock RMR < 40
-    - Electrical safety for trailing cables
-    - OSHA Lockout/Tagout (LOTO) rules
-    """)
-
-    st.divider()
-    st.info("ℹ️ All answers are grounded in official MSHA fatality reports, OSHA standards, and DGMS circulars.")
-
 # Main Title Banner
 st.title("🛡️ Mine Safety & Hazard Assistant")
 st.caption("A practical safety guide for mine workers, safety officers, and mining engineering students.")
@@ -152,18 +131,16 @@ tabs = st.tabs(["💬 Ask Safety Assistant", "📋 Mine Safety Plan Generator", 
 with tabs[0]:
     st.subheader("Ask a Question About Mine Safety, Regulations, or Hazards")
     
-    # Sample Query Buttons
-    st.caption("Click a sample question to get started:")
-    btn_cols = st.columns(4)
-    sample_q = None
-    if btn_cols[0].button("🚜 Shuttle Car Accidents"):
-        sample_q = "What causes shuttle car crush injuries during underground pillar extraction in MSHA fatality reports?"
-    if btn_cols[1].button("🚛 Dumper Edge Overturn"):
-        sample_q = "What parapet wall height is required to prevent opencast dump truck rollbacks under DGMS circulars?"
-    if btn_cols[2].button("⚡ Trailing Cable Shock"):
-        sample_q = "What electrical ground continuity safety precautions are mandatory for heavy excavator trailing cables?"
-    if btn_cols[3].button("🚨 Emergency Stop"):
-        sample_q = "Emergency stop halt mine operations immediately on Bench-04 due to highwall slope movement."
+    # Plain Written Example Questions (No buttons)
+    st.markdown("""
+    **Sample Questions You Can Ask:**
+    - *What causes shuttle car crush injuries during pillar extraction?*
+    - *What is the mandatory dumper berm height on opencast haul roads?*
+    - *What is the probability of an edge dumper accident happening?*
+    - *What electrical ground continuity rules apply to 6.6kV trailing cables?*
+    - *What are the OSHA Lockout/Tagout (LOTO) rules during conveyor maintenance?*
+    """)
+    st.divider()
 
     # Handle Pending Human Approval Gate
     if st.session_state.pending_emergency_query:
@@ -192,19 +169,18 @@ with tabs[0]:
 
     # Chat Input Box
     chat_input_val = st.chat_input("Ask a question about mine safety or hazard rules...")
-    active_user_q = chat_input_val or sample_q
 
-    if active_user_q:
-        st.session_state.messages.append({"role": "user", "content": active_user_q})
+    if chat_input_val:
+        st.session_state.messages.append({"role": "user", "content": chat_input_val})
         with st.chat_message("user"):
-            st.markdown(active_user_q)
+            st.markdown(chat_input_val)
 
         with st.chat_message("assistant"):
             with st.spinner("Searching official MSHA & OSHA safety guidelines..."):
-                res = engine.run_safety_query(active_user_q)
+                res = engine.run_safety_query(chat_input_val)
                 
                 if res.get("requires_human_approval"):
-                    st.session_state.pending_emergency_query = active_user_q
+                    st.session_state.pending_emergency_query = chat_input_val
                     st.warning(res["answer"])
                     st.rerun()
                 else:
