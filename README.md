@@ -1,6 +1,6 @@
 # MineSafety-AI 🛡️: MSHA, OSHA & DGMS Mine Accident Prevention & Risk Copilot
 
-**MineSafety-AI** is an enterprise-grade, domain-specific **Mine Safety & Accident Prevention Copilot** built using **LangChain**, **LangGraph StateGraph**, **Groq / Ollama LLMs**, **BM25 + Qdrant Hybrid Search**, and **DVC Data Version Control**.
+**MineSafety-AI** is an enterprise-grade, domain-specific **Mine Safety & Accident Prevention Copilot** built using **LangChain LCEL**, **LangGraph StateGraph**, **Groq / Ollama LLMs**, **BM25 + Qdrant Hybrid Search**, and **DVC Data Version Control**.
 
 Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **48,071 semantic chunks** across **1,324 official MSHA (Mine Safety and Health Administration) Fatality Investigation Reports (1995–2025)**, **DGMS Legislation (Coal Mines Regulations 2017, Metalliferous Mines Regulations 2017, Mines Act 1952)**, **OSHA 29 CFR Health & Safety Standards**, and **Mining Engineering Reference Textbooks**.
 
@@ -8,34 +8,39 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **4
 
 ## 🌟 Key Features
 
-1. **48,071 Chunk Knowledge Base**:
+1. **Streamlined Modular Architecture (`src/`)**:
+   - **`src/engine.py`**: Consolidated Document Chunker, Hybrid Vector/BM25 Indexer, Reranker, Mathematical Risk Analytics Engine, and LangChain `PromptTemplate` RAG Engine.
+   - **`src/guardrails.py`**: Real-time input prompt injection defense and strict domain locking.
+   - **`src/workflow.py`**: Idiomatic **LangGraph `StateGraph`** workflow managing DAG nodes, intent routing, emergency human-in-the-loop gating, and discovery trace logging.
+
+2. **48,071 Chunk Knowledge Base**:
    - **1,324 Scraped MSHA Fatality Reports (1995–2025)**: Spontaneous heating, mine fires, methane explosions, shuttle car crush injuries, dumper edge overturns, 6.6kV trailing cable shocks, roof falls, and inundation events.
    - **Official Rules & Legislation (`data/Rules/`)**: *Coal Mines Regulations 2017 (CMR)*, *Metalliferous Mines Regulations 2017 (OMR)*, *Mines Act 1952*, *Mines Rescue Rules*, *Ammonium Nitrate Rules 2012*, *India OSHA Code*.
    - **Official Incident Reports & Circulars (`data/Reports/`)**: DGMS Technical Safety Circulars, Coal & Non-Coal Annual Safety Reports, Dust Suppression Standards, Railway Siding Guidelines.
    - **Mining Reference Textbooks (`data/weebly_books/` & `data/pdf_books/`)**: Subsurface Ventilation, Rock Mechanics, Open Pit Design, Surface Blast Engineering, Mine Power Systems.
 
-2. **Dynamic Statistical Risk Analytics Engine (`src/analytics/risk_analyzer.py`)**:
+3. **Dynamic Statistical Risk Analytics Engine (`src/engine.py`)**:
    Computes exact mathematical probabilities in real time over the 1,324-report corpus:
    - **Accident Occurrence Probability**: 
      $$P(\text{Accident}) = \frac{\text{Hazard Incident Cases } (N_{\text{hazard}})}{\text{Total Incident Reports } (N_{\text{total}})} \times 100\%$$
    - **Fatality Probability Given Accident (Mortality Rate)**: 
      $$P(\text{Fatality} \mid \text{Accident}) = \frac{\text{Fatal Outcome Cases } (F_{\text{hazard}})}{\text{Hazard Incident Cases } (N_{\text{hazard}})} \times 100\%$$
 
-3. **2-Step Analytical Safety Framework**:
+4. **2-Step Analytical Safety Framework**:
    - **Paragraph 1 (Historical Fatality & Root Cause Analysis)**: Analyzes historical case studies and presents exact mathematical accident occurrence & fatality probability percentages.
    - **Paragraph 2 (Regulatory Compliance & Required Prevention Controls)**: Cross-references official regulations (CMR 2017, OMR 2017, Mines Act 1952, MSHA 30 CFR, OSHA) to detail mandatory engineering controls (parapet berm height = tyre radius, Proximity Detection Systems, FRAS belts, LOTO).
    - **Citations**: Attaches grounded source metadata tags at the bottom.
 
-4. **Strict Domain Scope Guardrail (`src/evals/guardrails.py`)**:
+5. **Strict Domain Scope Guardrail (`src/guardrails.py`)**:
    - Enforces strict domain focus on mine safety, accident investigation reports, and mining regulations. Refuses off-topic general knowledge queries politely.
 
-5. **DVC + DAGsHub Data Version Control**:
+6. **DVC + DAGsHub Data Version Control**:
    - 100% of large PDF files and 1,324 report datasets version-controlled via DVC (`data/*.dvc`) and stored on DAGsHub cloud storage (`https://dagshub.com/PriyankaHichkad/Mine-Safety-Assistant.dvc`).
 
-6. **Dual 100% Green CI/CD Quality Gates (`.github/workflows/`)**:
+7. **Dual 100% Green CI/CD Quality Gates (`.github/workflows/`)**:
    - Automated GitHub Actions workflows ([`ci_eval.yml`](file:///.github/workflows/ci_eval.yml) and [`rag_eval_ci.yml`](file:///.github/workflows/rag_eval_ci.yml)) testing accuracy (100%), citation grounding (100%), and containment SLAs.
 
-7. **Clean Streamlit Web Interface (`ui/streamlit_app.py`)**:
+8. **Clean Streamlit Web Interface (`ui/streamlit_app.py`)**:
    - High-contrast, clean layout without left AI sidebars or sample question buttons. Includes plain written sample questions, interactive Mine Risk Plan Generator, and chat interface.
 
 ---
@@ -50,7 +55,7 @@ flowchart TD
     RiskEngine --> Formulas["Calculate P(Accident) & P(Fatality|Accident)"]
     Formulas --> HybridRetriever["BM25 + Qdrant Hybrid Search (48,071 Chunks)"]
     HybridRetriever --> Reranker["Cross-Encoder Reranker (BAAI/bge-reranker-base)"]
-    Reranker --> PromptBuilder["2-Step Prompt Construction"]
+    Reranker --> PromptBuilder["LangChain PromptTemplate Construction"]
     PromptBuilder --> LLM["Groq Cloud / Ollama LLM"]
     LLM --> StructuredResponse["2-Paragraph Narrative Answer + Bottom Citations"]
 ```
