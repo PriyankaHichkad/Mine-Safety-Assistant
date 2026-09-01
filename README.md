@@ -48,16 +48,15 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **4
 ## 🛠️ System Architecture
 
 ```mermaid
-flowchart TD
-    UserQuery["User Input Query"] --> Guardrail{"Domain & Safety Guardrail"}
-    Guardrail -- Out-of-Domain --> Refusal["Domain Refusal Response"]
-    Guardrail -- In-Domain --> RiskEngine["Statistical Risk Analytics Engine"]
-    RiskEngine --> Formulas["Calculate P(Accident) & P(Fatality|Accident)"]
-    Formulas --> HybridRetriever["BM25 + Qdrant Hybrid Search (48,071 Chunks)"]
-    HybridRetriever --> Reranker["Cross-Encoder Reranker (BAAI/bge-reranker-base)"]
-    Reranker --> PromptBuilder["LangChain PromptTemplate Construction"]
-    PromptBuilder --> LLM["Groq Cloud / Ollama LLM"]
-    LLM --> StructuredResponse["2-Paragraph Narrative Answer + Bottom Citations"]
+graph TD
+    A[User Safety Query] --> B[Domain Guardrail]
+    B -- Refused --> C[Domain Refusal]
+    B -- Approved --> D[Risk Analytics Engine]
+    D --> E[Hybrid Search: BM25 + Qdrant]
+    E --> F[Cross-Encoder Reranker]
+    F --> G[LangChain Prompt Synthesis]
+    G --> H[Groq / Ollama LLM]
+    H --> I[Grounded Answer + Citations]
 ```
 
 ---
