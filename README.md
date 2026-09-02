@@ -46,16 +46,18 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **6
 
 ## System Architecture
 
-```mermaid
-graph TD
-    A[User Safety Query] --- B[Domain Guardrail]
-    B --- C[Risk Analytics Engine]
-    C --- D[Mining Entity Extractor]
-    D --- E[Hybrid Search: BM25 + Qdrant]
-    E --- F[Cross-Encoder Reranker]
-    F --- G[LangChain Prompt Synthesis]
-    G --- H[Groq / Ollama LLM]
-    H --- I[Grounded Answer + Citations]
+```text
++-----------------------+      +-------------------+      +-----------------------+
+|   User Safety Query   | ---> |  Domain Guardrail | ---> | Risk Analytics Engine |
++-----------------------+      +-------------------+      +-----------------------+
+                                                                      |
++-----------------------+      +-------------------+      +-----------------------+
+| Cross-Encoder Rerank  | <--- | BM25+Qdrant Search| <--- | Mining Entity Extract |
++-----------------------+      +-------------------+      +-----------------------+
+            |
++-----------------------+      +-------------------+      +-----------------------+
+|  LangChain Synthesis  | ---> | Groq / Ollama LLM | ---> | Grounded Answer+Cites |
++-----------------------+      +-------------------+      +-----------------------+
 ```
 
 ---
