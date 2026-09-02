@@ -116,8 +116,8 @@ class LangGraphMineSafetyEngine:
         if "emergency stop" in query.lower() or "halt mine" in query.lower():
             tool_res = issue_emergency_stop_directive("SITE-ALPHA-01", reason=query, human_approved=human_approved)
             if tool_res["status"] == "gated_approval_required":
-                return {"query": query, "answer": f"🚨 **HIGH-IMPACT EMERGENCY ACTION DETECTED**\n\n{tool_res['message']}\n\n*Please click 'Approve & Execute Emergency Stop' in the UI below to authorize this directive.*", "citations": [], "requires_human_approval": True, "telemetry": {"total_latency_ms": 5.0, "llm_used": "Emergency Router"}}
-            return {"query": query, "answer": f"🚨 **EMERGENCY DIRECTIVE EXECUTED**\n\n{tool_res['message']}", "citations": [], "requires_human_approval": False, "telemetry": {"total_latency_ms": 12.0, "llm_used": "Emergency Tool"}}
+                return {"query": query, "answer": f"**HIGH-IMPACT EMERGENCY ACTION DETECTED**\n\n{tool_res['message']}\n\n*Please click 'Confirm & Issue Emergency Stop Order' in the UI below to authorize this directive.*", "citations": [], "requires_human_approval": True, "telemetry": {"total_latency_ms": 5.0, "llm_used": "Emergency Router"}}
+            return {"query": query, "answer": f"**EMERGENCY DIRECTIVE EXECUTED**\n\n{tool_res['message']}", "citations": [], "requires_human_approval": False, "telemetry": {"total_latency_ms": 12.0, "llm_used": "Emergency Tool"}}
 
         initial_state: MineSafetyState = {
             "raw_query": query, "query": query, "tier": "", "intent": "", "requires_human_approval": False, "target_tool": None,

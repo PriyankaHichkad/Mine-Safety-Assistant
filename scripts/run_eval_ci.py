@@ -42,12 +42,12 @@ DEFAULT_GOLDEN_DATASET = [
 
 def fast_ci_ingest(db_path: str, bm25_path: str):
     """Fast lightweight knowledge base ingestion for GitHub Actions CI (runs in <10 seconds)."""
-    print("Notice: Vector DB missing on CI runner. Generating core regulatory dataset...")
+    print("Notice: Knowledge base missing on CI runner. Generating core regulatory dataset...")
     from src.ingestion.chunker import MiningDocumentChunker
     from src.ingestion.indexer import MineMindIndexer
     from scripts.scrape_msha_accidents import generate_full_msha_library
     
-    # 1. Generate 38 core MSHA/OSHA report files
+    # Generate MSHA fatality reports library
     generate_full_msha_library()
     
     chunker = MiningDocumentChunker()
@@ -80,7 +80,7 @@ def fast_ci_ingest(db_path: str, bm25_path: str):
 
 def run_evaluation_suite():
     print("=== MineMind CI/CD Quality Gating & Evaluation Suite ===")
-    print("Pre-Deployment Validation Phase 1 (Figure 1 Step 1-3)")
+    print("Pre-Deployment Validation Phase 1")
 
     db_path = "./data/qdrant_db"
     bm25_path = "./data/bm25_index.pkl"

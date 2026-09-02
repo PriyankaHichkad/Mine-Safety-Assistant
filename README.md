@@ -1,23 +1,22 @@
-# MineSafety-AI 🛡️: MSHA, OSHA & DGMS Mine Accident Prevention & Risk Copilot
+# MineSafety-AI: MSHA, OSHA & DGMS Mine Accident Prevention & Risk Copilot
 
 **MineSafety-AI** is an enterprise-grade, domain-specific **Mine Safety & Accident Prevention Copilot** built using **LangChain LCEL**, **LangGraph StateGraph**, **Groq / Ollama LLMs**, **BM25 + Qdrant Hybrid Search**, and **DVC Data Version Control**.
 
-Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **48,071 semantic chunks** across **1,324 official MSHA (Mine Safety and Health Administration) Fatality Investigation Reports (1995–2025)**, **DGMS Legislation (Coal Mines Regulations 2017, Metalliferous Mines Regulations 2017, Mines Act 1952)**, **OSHA 29 CFR Health & Safety Standards**, and **Mining Engineering Reference Textbooks**.
+Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **6,880 clean, structured semantic chunks** across **1,324 official MSHA (Mine Safety and Health Administration) Fatality Investigation Reports (1995–2025)**, **DGMS Legislation (Coal Mines Regulations 2017, Metalliferous Mines Regulations 2017, Mines Act 1952)**, and **OSHA 29 CFR Health & Safety Standards**.
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 1. **Streamlined Modular Architecture (`src/`)**:
-   - **`src/engine.py`**: Consolidated Document Chunker, Hybrid Vector/BM25 Indexer, Reranker, Mathematical Risk Analytics Engine, and LangChain `PromptTemplate` RAG Engine.
+   - **`src/engine.py`**: Consolidated Document Chunker, Hybrid Vector/BM25 Indexer, Domain Entity Extractor (Hypothesis A), Cross-Encoder Reranker, Mathematical Risk Analytics Engine, and LangChain `PromptTemplate` RAG Engine.
    - **`src/guardrails.py`**: Real-time input prompt injection defense and strict domain locking.
-   - **`src/workflow.py`**: Idiomatic **LangGraph `StateGraph`** workflow managing DAG nodes, intent routing, emergency human-in-the-loop gating, and discovery trace logging.
+   - **`src/workflow.py`**: LangGraph `StateGraph` workflow managing DAG nodes, intent routing, emergency human-in-the-loop gating, and discovery trace logging.
 
-2. **48,071 Chunk Knowledge Base**:
+2. **Official Reports & Rules Knowledge Base**:
    - **1,324 Scraped MSHA Fatality Reports (1995–2025)**: Spontaneous heating, mine fires, methane explosions, shuttle car crush injuries, dumper edge overturns, 6.6kV trailing cable shocks, roof falls, and inundation events.
    - **Official Rules & Legislation (`data/Rules/`)**: *Coal Mines Regulations 2017 (CMR)*, *Metalliferous Mines Regulations 2017 (OMR)*, *Mines Act 1952*, *Mines Rescue Rules*, *Ammonium Nitrate Rules 2012*, *India OSHA Code*.
    - **Official Incident Reports & Circulars (`data/Reports/`)**: DGMS Technical Safety Circulars, Coal & Non-Coal Annual Safety Reports, Dust Suppression Standards, Railway Siding Guidelines.
-   - **Mining Reference Textbooks (`data/weebly_books/` & `data/pdf_books/`)**: Subsurface Ventilation, Rock Mechanics, Open Pit Design, Surface Blast Engineering, Mine Power Systems.
 
 3. **Dynamic Statistical Risk Analytics Engine (`src/engine.py`)**:
    Computes exact mathematical probabilities in real time over the 1,324-report corpus:
@@ -35,7 +34,7 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **4
    - Enforces strict domain focus on mine safety, accident investigation reports, and mining regulations. Refuses off-topic general knowledge queries politely.
 
 6. **DVC + DAGsHub Data Version Control**:
-   - 100% of large PDF files and 1,324 report datasets version-controlled via DVC (`data/*.dvc`) and stored on DAGsHub cloud storage (`https://dagshub.com/PriyankaHichkad/Mine-Safety-Assistant.dvc`).
+   - 100% of PDF and TXT report datasets version-controlled via DVC (`data/*.dvc`) and stored on DAGsHub cloud storage (`https://dagshub.com/PriyankaHichkad/Mine-Safety-Assistant.dvc`).
 
 7. **Dual 100% Green CI/CD Quality Gates (`.github/workflows/`)**:
    - Automated GitHub Actions workflows ([`ci_eval.yml`](file:///.github/workflows/ci_eval.yml) and [`rag_eval_ci.yml`](file:///.github/workflows/rag_eval_ci.yml)) testing accuracy (100%), citation grounding (100%), and containment SLAs.
@@ -45,23 +44,23 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **4
 
 ---
 
-## 🛠️ System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
-    A[User Safety Query] --> B[Domain Guardrail]
-    B -- Refused --> C[Domain Refusal]
-    B -- Approved --> D[Risk Analytics Engine]
-    D --> E[Hybrid Search: BM25 + Qdrant]
-    E --> F[Cross-Encoder Reranker]
-    F --> G[LangChain Prompt Synthesis]
-    G --> H[Groq / Ollama LLM]
-    H --> I[Grounded Answer + Citations]
+    A[User Safety Query] --- B[Domain Guardrail]
+    B --- C[Risk Analytics Engine]
+    C --- D[Mining Entity Extractor]
+    D --- E[Hybrid Search: BM25 + Qdrant]
+    E --- F[Cross-Encoder Reranker]
+    F --- G[LangChain Prompt Synthesis]
+    G --- H[Groq / Ollama LLM]
+    H --- I[Grounded Answer + Citations]
 ```
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### 1. Clone & Install Dependencies
 ```bash

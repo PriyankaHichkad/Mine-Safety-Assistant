@@ -11,7 +11,6 @@ from src.graph.safety_graph import LangGraphMineSafetyEngine
 # Page Configuration
 st.set_page_config(
     page_title="Mine Safety Assistant | MSHA & OSHA Compliance Guide",
-    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -122,10 +121,10 @@ def load_safety_engine(groq_key: str):
 engine = load_safety_engine(groq_key_secret)
 
 # Main Title Banner
-st.title("🛡️ Mine Safety & Hazard Assistant")
+st.title("Mine Safety & Hazard Assistant")
 st.caption("A practical safety guide for mine workers, safety officers, and mining engineering students.")
 
-tabs = st.tabs(["💬 Ask Safety Assistant", "📋 Mine Safety Plan Generator", "📖 Official Safety Rules & Manuals"])
+tabs = st.tabs(["Ask Safety Assistant", "Mine Safety Plan Generator", "Official Safety Rules & Manuals"])
 
 # TAB 1: Chat Assistant (Default Tab for Miners & Students)
 with tabs[0]:
@@ -144,15 +143,15 @@ with tabs[0]:
 
     # Handle Pending Human Approval Gate
     if st.session_state.pending_emergency_query:
-        st.warning("⚠️ EMERGENCY DIRECTIVE REQUIRES SAFETY OFFICER SIGN-OFF")
+        st.warning("EMERGENCY DIRECTIVE REQUIRES SAFETY OFFICER SIGN-OFF")
         st.write(f"**Action Directive**: {st.session_state.pending_emergency_query}")
         col_app1, col_app2 = st.columns(2)
-        if col_app1.button("✅ Confirm & Issue Emergency Stop Order", use_container_width=True):
+        if col_app1.button("Confirm & Issue Emergency Stop Order", use_container_width=True):
             res = engine.run_safety_query(st.session_state.pending_emergency_query, human_approved=True)
             st.session_state.messages.append({"role": "assistant", "content": res["answer"]})
             st.session_state.pending_emergency_query = None
             st.rerun()
-        if col_app2.button("❌ Cancel Order", use_container_width=True):
+        if col_app2.button("Cancel Order", use_container_width=True):
             st.session_state.pending_emergency_query = None
             st.info("Emergency action cancelled.")
             st.rerun()
@@ -162,10 +161,10 @@ with tabs[0]:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if msg.get("citations"):
-                st.caption("📌 Official References & Proofs:")
+                st.caption("Official References & Proofs:")
                 for c in msg["citations"]:
                     page_loc = c.get('page_number') or c.get('section') or 'Standard Reference'
-                    st.markdown(f"<span class='citation-badge'>📖 {c['doc_title']}</span> &nbsp; ✍️ **Author**: *{c['author']}* &nbsp; 📍 **Location**: `{page_loc}`", unsafe_allow_html=True)
+                    st.markdown(f"<span class='citation-badge'>{c['doc_title']}</span> &nbsp; **Author**: *{c['author']}* &nbsp; **Location**: `{page_loc}`", unsafe_allow_html=True)
 
     # Chat Input Box
     chat_input_val = st.chat_input("Ask a question about mine safety or hazard rules...")
@@ -186,10 +185,10 @@ with tabs[0]:
                 else:
                     st.markdown(res["answer"])
                     if res["citations"]:
-                        st.caption("📌 Official References & Proofs:")
+                        st.caption("Official References & Proofs:")
                         for c in res["citations"]:
                             page_loc = c.get('page_number') or c.get('section') or 'Standard Reference'
-                            st.markdown(f"<span class='citation-badge'>📖 {c['doc_title']}</span> &nbsp; ✍️ **Author**: *{c['author']}* &nbsp; 📍 **Location**: `{page_loc}`", unsafe_allow_html=True)
+                            st.markdown(f"<span class='citation-badge'>{c['doc_title']}</span> &nbsp; **Author**: *{c['author']}* &nbsp; **Location**: `{page_loc}`", unsafe_allow_html=True)
                         
                     st.session_state.messages.append({
                         "role": "assistant",
@@ -217,7 +216,7 @@ with tabs[1]:
         )
         workers = st.number_input("Shift Workforce Size (Miners)", 10, 200, 45)
 
-    if st.button("🛡️ Generate Safety & Hazard Prevention Plan", use_container_width=True):
+    if st.button("Generate Safety & Hazard Prevention Plan", use_container_width=True):
         scenario_query = f"I am operating a {mine_type} at {depth_m}m depth deploying {equipment} with {workers} workers per shift. What are the historical fatality causes, mandatory safety precautions under MSHA/DGMS, and required emergency training plans for this setup?"
         
         if not engine:
@@ -226,23 +225,23 @@ with tabs[1]:
             with st.spinner("Analyzing safety rules and historical accident reports..."):
                 res = engine.run_safety_query(scenario_query)
                 
-                st.markdown("### 📋 Mine Safety & Accident Prevention Checklist")
+                st.markdown("### Mine Safety & Accident Prevention Checklist")
                 st.markdown(res["answer"])
                 
-                st.subheader("📌 Official Regulations Cited")
+                st.subheader("Official Regulations Cited")
                 for c in res["citations"]:
                     page_loc = c.get('page_number') or c.get('section') or 'Standard Reference'
-                    st.markdown(f"<span class='citation-badge'>📖 {c['doc_title']}</span> &nbsp; ✍️ **Author**: *{c['author']}* &nbsp; 📍 **Location**: `{page_loc}`", unsafe_allow_html=True)
+                    st.markdown(f"<span class='citation-badge'>{c['doc_title']}</span> &nbsp; **Author**: *{c['author']}* &nbsp; **Location**: `{page_loc}`", unsafe_allow_html=True)
 
 # TAB 3: Official Safety Rules & Manuals
 with tabs[2]:
-    st.subheader("📖 Official Mining Regulations & Fatality Report Library")
+    st.subheader("Official Mining Regulations & Fatality Report Library")
     st.caption("Key regulatory standards covered in this safety assistant:")
 
     col_a, col_b = st.columns(2)
     with col_a:
         st.markdown("""
-        ### ⛏️ MSHA & DGMS Safety Codes
+        ### MSHA & DGMS Safety Codes
         - **MSHA-FAT-2023-01**: Shuttle Car Crush Accidents & Proximity Detection Systems (PDS).
         - **MSHA-FAT-2023-02**: Underground Roof Falls, RMR Support Plans & Resin Bolting.
         - **MSHA-FAT-2024-01**: Opencast Dumper Overturns & Parapet Wall / Berm Heights.
@@ -250,7 +249,7 @@ with tabs[2]:
         """)
     with col_b:
         st.markdown("""
-        ### 🛡️ OSHA Health & Safety Standards
+        ### OSHA Health & Safety Standards
         - **OSHA 29 CFR 1910.147**: Lockout/Tagout (LOTO) for Conveyor & Machine Maintenance.
         - **OSHA 29 CFR 1910.120**: HAZWOPER & Multi-Gas Respirator Protection (H2S / Toxic Gas).
         - **CMR 2017 Regulations**: Ventilation, Gas Limits & Strata Control Rules.
