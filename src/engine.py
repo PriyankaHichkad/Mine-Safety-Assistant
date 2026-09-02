@@ -18,19 +18,37 @@ class MiningEntityExtractor:
     def __init__(self):
         self.equipment_patterns = {
             "shuttle car": ["shuttle car", "shuttlecar", "shuttle"],
-            "dumper": ["dumper", "dump truck", "tipping truck", "rear dump"],
+            "dumper": ["dumper", "dump truck", "tipping truck", "rear dump", "trucks", "haulers"],
             "trailing cable": ["trailing cable", "cable", "electric shovel cable"],
-            "continuous miner": ["continuous miner", "shearer", "header"],
+            "continuous miner": ["continuous miner", "continuous miners", "shearer", "header"],
             "conveyor": ["conveyor", "belt", "belt conveyor"],
-            "roof bolter": ["roof bolter", "bolter", "resin bolt"]
+            "roof bolter": ["roof bolter", "roof bolters", "bolter", "resin bolt"],
+            "excavator": ["excavator", "excavators", "bce", "bwe", "bucket chain excavator", "bucket-wheel excavator", "bucket wheel excavator"],
+            "shovel": ["shovel", "shovels", "electric shovel"],
+            "dozer": ["dozer", "dozers", "bulldozer", "bulldozers"],
+            "grader": ["grader", "graders", "motor grader"],
+            "blasthole drill": ["blasthole drill", "blasthole drills", "drill rig", "drilling rig"],
+            "dragline": ["dragline", "draglines"],
+            "jumbo drill": ["jumbo drill", "jumbo drills", "drill jumbo", "jumbo"],
+            "lhd": ["lhd", "lhds", "load-haul-dump", "load haul dump", "scoop"],
+            "crusher": ["crusher", "crushers", "feeder breaker"],
+            "ventilation fan": ["ventilation fan", "ventilation fans", "main fan", "auxiliary fan"],
+            "jackleg": ["jackleg", "jackleg drill"],
+            "road header": ["road header", "roadheader", "road headers"],
+            "shotcrete machine": ["shotcrete machine", "shotcrete", "sprayed concrete"],
+            "tunnel boring machine": ["tunnel boring machine", "tbm"]
         }
         self.hazard_patterns = {
-            "spontaneous combustion": ["spontaneous combustion", "spontaneous heating", "goaf fire", "mine fire"],
-            "roof fall": ["roof fall", "strata failure", "collapse", "side fall"],
-            "crush injury": ["crush", "crushed", "pinch point", "caught between"],
-            "edge overturn": ["overturn", "tipping edge", "edge fall", "parapet wall"],
-            "electrical shock": ["shock", "ground fault", "electrocution"],
-            "blasting flyrock": ["flyrock", "blasting", "powder"]
+            "spontaneous combustion": ["spontaneous combustion", "spontaneous heating", "goaf fire", "mine fire", "fire", "fires and explosions"],
+            "roof fall": ["roof fall", "strata failure", "collapse", "side fall", "cave-in", "cave-ins", "subsidence", "sinkhole", "sinkholes"],
+            "crush injury": ["crush injury", "crush", "crushed", "pinch point", "caught between", "heavy equipment incidents", "moving machine parts"],
+            "edge overturn": ["edge overturn", "overturn", "tipping edge", "edge fall", "parapet wall"],
+            "electrical shock": ["electrical shock", "electric shock", "shock", "ground fault", "electrocution"],
+            "blasting flyrock": ["blasting flyrock", "flyrock", "blasting", "powder", "explosives"],
+            "slips trips falls": ["slips, trips, and falls", "slips", "trips", "slips and falls"],
+            "toxic flammable gases": ["toxic or flammable gases", "toxic gas", "flammable gas", "h2s", "co poisoning", "methane gas", "blackdamp", "firedamp"],
+            "loss of ventilation": ["loss of ventilation", "ventilation failure", "oxygen deficiency", "stagnant air"],
+            "noise and vibration": ["noise and vibration", "noise", "vibration", "hearing loss"]
         }
         self.regulation_patterns = {
             "CMR 2017": ["cmr 2017", "coal mines regulations", "cmr"],
@@ -48,7 +66,7 @@ class MiningEntityExtractor:
         extracted_hazard = [hz for hz, kw_list in self.hazard_patterns.items() if any(kw in q_lower for kw in kw_list)]
         extracted_regulation = [reg for reg, kw_list in self.regulation_patterns.items() if any(kw in q_lower for kw in kw_list)]
         
-        mine_type = "Underground Mining" if any(w in q_lower for w in ["underground", "pillar", "shaft", "seam", "longwall", "shuttle", "goaf"]) else "Opencast / Surface Mining"
+        mine_type = "Underground Mining" if any(w in q_lower for w in ["underground", "pillar", "shaft", "seam", "longwall", "shuttle", "goaf", "jumbo", "lhd", "jackleg", "road header"]) else "Opencast / Surface Mining"
 
         return {
             "equipment": extracted_equipment[0] if extracted_equipment else "General Equipment",
