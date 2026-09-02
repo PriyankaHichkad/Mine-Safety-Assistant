@@ -37,7 +37,10 @@ class MiningDocumentChunker:
                                 "doc_title": filename.replace(".pdf", "").replace("_", " ").title(),
                                 "author": "Mining Specialist",
                                 "page_number": str(page_num),
-                                "source_file": filename
+                                "source_file": filename,
+                                "tenant": "mining_org_default",
+                                "access_group": "safety_officer_public",
+                                "effective_date": "2025-01-01"
                             }
                         })
             except Exception as e:
@@ -57,7 +60,10 @@ class MiningDocumentChunker:
                             "doc_title": filename.replace(".txt", "").replace("_", " ").title(),
                             "author": "Mining Safety Board",
                             "page_number": f"Section {i//self.chunk_size + 1}",
-                            "source_file": filename
+                            "source_file": filename,
+                            "tenant": "mining_org_default",
+                            "access_group": "safety_officer_public",
+                            "effective_date": "2025-01-01"
                         }
                     })
         return chunks
