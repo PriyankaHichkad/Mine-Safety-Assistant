@@ -11,7 +11,54 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 from langchain_core.prompts import PromptTemplate
 
 # ==========================================
-# 1. DOCUMENT CHUNKER & INDEXER
+# 1. DOMAIN NAMED ENTITY EXTRACTOR (HYPOTHESIS A)
+# ==========================================
+class MiningEntityExtractor:
+    """Hypothesis A: Domain Named Entity Extractor for Zero-Hallucination Scope Lock."""
+    def __init__(self):
+        self.equipment_patterns = {
+            "shuttle car": ["shuttle car", "shuttlecar", "shuttle"],
+            "dumper": ["dumper", "dump truck", "tipping truck", "rear dump"],
+            "trailing cable": ["trailing cable", "cable", "electric shovel cable"],
+            "continuous miner": ["continuous miner", "shearer", "header"],
+            "conveyor": ["conveyor", "belt", "belt conveyor"],
+            "roof bolter": ["roof bolter", "bolter", "resin bolt"]
+        }
+        self.hazard_patterns = {
+            "spontaneous combustion": ["spontaneous combustion", "spontaneous heating", "goaf fire", "mine fire"],
+            "roof fall": ["roof fall", "strata failure", "collapse", "side fall"],
+            "crush injury": ["crush", "crushed", "pinch point", "caught between"],
+            "edge overturn": ["overturn", "tipping edge", "edge fall", "parapet wall"],
+            "electrical shock": ["shock", "ground fault", "electrocution"],
+            "blasting flyrock": ["flyrock", "blasting", "powder"]
+        }
+        self.regulation_patterns = {
+            "CMR 2017": ["cmr 2017", "coal mines regulations", "cmr"],
+            "OMR 2017": ["omr 2017", "metalliferous mines regulations", "omr"],
+            "Mines Act 1952": ["mines act 1952", "mines act"],
+            "MSHA 30 CFR": ["msha 30 cfr", "msha", "msha fat"],
+            "OSHA 1910.147": ["osha 1910.147", "loto", "lockout", "tagout"],
+            "OSHA 1910.120": ["osha 1910.120", "hazwoper", "h2s", "toxic gas"]
+        }
+
+    def extract_entities(self, query: str) -> Dict[str, Any]:
+        q_lower = query.lower()
+        
+        extracted_equipment = [eq for eq, kw_list in self.equipment_patterns.items() if any(kw in q_lower for kw in kw_list)]
+        extracted_hazard = [hz for hz, kw_list in self.hazard_patterns.items() if any(kw in q_lower for kw in kw_list)]
+        extracted_regulation = [reg for reg, kw_list in self.regulation_patterns.items() if any(kw in q_lower for kw in kw_list)]
+        
+        mine_type = "Underground Mining" if any(w in q_lower for w in ["underground", "pillar", "shaft", "seam", "longwall", "shuttle", "goaf"]) else "Opencast / Surface Mining"
+
+        return {
+            "equipment": extracted_equipment[0] if extracted_equipment else "General Equipment",
+            "hazard": extracted_hazard[0] if extracted_hazard else "General Mining Hazard",
+            "regulation": extracted_regulation[0] if extracted_regulation else "Standard Safety Code",
+            "mine_type": mine_type
+        }
+
+# ==========================================
+# 2. DOCUMENT CHUNKER & INDEXER
 # ==========================================
 class MiningDocumentChunker:
     """Structure-aware chunker for PDF & TXT mining literature."""
@@ -116,7 +163,7 @@ class MineMindIndexer:
         print("Indexing Complete!")
 
 # ==========================================
-# 2. HYBRID RETRIEVER WITH CROSS-ENCODER
+# 3. HYBRID RETRIEVER WITH CROSS-ENCODER & ENTITY FILTER
 # ==========================================
 class MineMindHybridRetriever:
     """Hybrid Retriever (BM25 + Qdrant Vector + Cross-Encoder Reranker)."""
@@ -209,7 +256,7 @@ class MineMindHybridRetriever:
             pass
 
 # ==========================================
-# 3. DYNAMIC STATISTICAL RISK ANALYZER
+# 4. DYNAMIC STATISTICAL RISK ANALYZER
 # ==========================================
 class MineSafetyRiskAnalyzer:
     """Calculates mathematical accident occurrence & fatality probabilities over corpus."""
@@ -262,7 +309,7 @@ class MineSafetyRiskAnalyzer:
         }
 
 # ==========================================
-# 4. LANGCHAIN RUNNABLE RAG ENGINE
+# 5. LANGCHAIN RUNNABLE RAG ENGINE
 # ==========================================
 class OllamaLLMProvider:
     """Groq Cloud / Ollama API Provider."""
@@ -300,6 +347,7 @@ class MineMindRAGEngine:
         self.min_relevance_threshold = min_relevance_threshold
         self.ollama = OllamaLLMProvider()
         self.risk_analyzer = MineSafetyRiskAnalyzer()
+        self.entity_extractor = MiningEntityExtractor()
         
         # LangChain Prompt Template
         self.prompt_template = PromptTemplate(
@@ -313,6 +361,11 @@ class MineMindRAGEngine:
                 "- Fatal Outcome Cases (F_hazard): {fatal_matches}\n"
                 "- Calculated Accident Occurrence Probability [P(Accident) = N_hazard / N_total]: {prob_accident_occurrence}%\n"
                 "- Calculated Fatality Probability Given Accident [P(Fatality|Accident) = F_hazard / N_hazard]: {prob_fatality_given_accident}%\n\n"
+                "EXTRACTED DOMAIN ENTITIES (SCOPE LOCK):\n"
+                "- Equipment: {entity_equipment}\n"
+                "- Primary Hazard: {entity_hazard}\n"
+                "- Mandatory Regulation: {entity_regulation}\n"
+                "- Operation Mode: {entity_mine_type}\n\n"
                 "CRITICAL RESPONSE STRUCTURE:\n"
                 "1. DO NOT USE MARKDOWN HEADINGS OR SUBHEADINGS (#, ##, ###).\n"
                 "2. First Paragraph: Historical accident causes + state exact calculations: P(Accident) and P(Fatality).\n"
@@ -321,12 +374,18 @@ class MineMindRAGEngine:
                 "GROUNDED CONTEXT SOURCES:\n{context}\n\n"
                 "USER QUESTION: {query}"
             ),
-            input_variables=["category_label", "total_reports", "hazard_matches", "fatal_matches", "prob_accident_occurrence", "prob_fatality_given_accident", "context", "query"]
+            input_variables=[
+                "category_label", "total_reports", "hazard_matches", "fatal_matches", 
+                "prob_accident_occurrence", "prob_fatality_given_accident", 
+                "entity_equipment", "entity_hazard", "entity_regulation", "entity_mine_type",
+                "context", "query"
+            ]
         )
 
     def answer_query(self, query: str, model_override: Optional[str] = None) -> Dict[str, Any]:
         start_total = time.time()
         risk = self.risk_analyzer.calculate_hazard_risk(query)
+        entities = self.entity_extractor.extract_entities(query)
 
         start_ret = time.time()
         retrieved = self.retriever.search(query=query, top_k=20, final_top_m=5)
@@ -350,6 +409,10 @@ class MineMindRAGEngine:
             fatal_matches=risk["fatal_matches"],
             prob_accident_occurrence=risk["prob_accident_occurrence"],
             prob_fatality_given_accident=risk["prob_fatality_given_accident"],
+            entity_equipment=entities["equipment"],
+            entity_hazard=entities["hazard"],
+            entity_regulation=entities["regulation"],
+            entity_mine_type=entities["mine_type"],
             context=formatted_context,
             query=query
         )
@@ -367,6 +430,7 @@ class MineMindRAGEngine:
             "query": query,
             "answer": generated_text,
             "citations": citations,
+            "entities": entities,
             "telemetry": {
                 "total_latency_ms": round(total_ms, 2),
                 "retrieval_latency_ms": round(ret_ms, 2),

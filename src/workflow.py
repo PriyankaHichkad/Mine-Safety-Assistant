@@ -3,7 +3,7 @@ import time
 from typing import Dict, Any, List, TypedDict, Optional
 from langgraph.graph import StateGraph, END
 
-from src.engine import MineMindHybridRetriever, MineMindRAGEngine
+from src.engine import MineMindHybridRetriever, MineMindRAGEngine, MiningEntityExtractor
 from src.guardrails import SafetyGuardrails
 from src.tools.safety_tools import issue_emergency_stop_directive
 from src.optimization.cache import SemanticQueryCache
@@ -19,6 +19,7 @@ class MineSafetyState(TypedDict):
     mine_type: str
     depth_m: int
     hazard_category: str
+    extracted_entities: Dict[str, Any]
     retrieved_docs: List[Dict[str, Any]]
     prelevance_passed: bool
     prevention_plan: str
@@ -28,10 +29,11 @@ class MineSafetyState(TypedDict):
     human_approved: bool
 
 class LangGraphMineSafetyEngine:
-    """Enterprise-Grade LangGraph Mine Accident Prevention & Hazard Copilot (Chapter 1-8 RAG Bible Compliant)."""
+    """Enterprise-Grade LangGraph Mine Accident Prevention & Hazard Copilot with Entity Scope Lock (Hypothesis A)."""
     def __init__(self, db_path: str = "./data/qdrant_db", bm25_path: str = "./data/bm25_index.pkl"):
         self.retriever = MineMindHybridRetriever(db_path=db_path, bm25_path=bm25_path)
         self.rag_engine = MineMindRAGEngine(self.retriever)
+        self.entity_extractor = MiningEntityExtractor()
         self.cache = SemanticQueryCache()
         self.guardrails = SafetyGuardrails()
         self.discovery_loop = ProductionDiscoveryLoop()
@@ -40,13 +42,15 @@ class LangGraphMineSafetyEngine:
     def _build_langgraph_workflow(self) -> StateGraph:
         workflow = StateGraph(MineSafetyState)
         workflow.add_node("parse_scenario", self._node_parse_scenario)
+        workflow.add_node("extract_entities", self._node_extract_entities)
         workflow.add_node("rewrite_query", self._node_rewrite_query)
         workflow.add_node("hybrid_retrieve", self._node_hybrid_retrieve)
         workflow.add_node("safety_guardrail", self._node_safety_guardrail)
         workflow.add_node("generate_plan", self._node_generate_plan)
 
         workflow.set_entry_point("parse_scenario")
-        workflow.add_edge("parse_scenario", "rewrite_query")
+        workflow.add_edge("parse_scenario", "extract_entities")
+        workflow.add_edge("extract_entities", "rewrite_query")
         workflow.add_edge("rewrite_query", "hybrid_retrieve")
         workflow.add_edge("hybrid_retrieve", "safety_guardrail")
         workflow.add_conditional_edges("safety_guardrail", lambda s: "generate_plan" if s["prelevance_passed"] else END)
@@ -62,14 +66,22 @@ class LangGraphMineSafetyEngine:
         elif any(w in q for w in ["fire", "heating", "spontaneous"]): cat = "Mine Fire & Combustion"
         return {"mine_type": mtype, "hazard_category": cat}
 
+    def _node_extract_entities(self, state: MineSafetyState) -> Dict[str, Any]:
+        """Node 1: Hypothesis A Domain Named Entity Extraction."""
+        entities = self.entity_extractor.extract_entities(state["raw_query"])
+        return {"extracted_entities": entities}
+
     def _node_rewrite_query(self, state: MineSafetyState) -> Dict[str, Any]:
-        """Node 1: Chapter 5 Query Rewriting / Normalization for Retrieval Expansion."""
+        """Node 2: Chapter 5 Query Rewriting & Entity Enrichment."""
         raw = state["raw_query"].strip()
         cat = state.get("hazard_category", "General Mine Safety")
-        # Enrich query context with domain-specific terms if terse
+        entities = state.get("extracted_entities", {})
+        
         rewritten = raw
         if len(raw.split()) < 5:
-            rewritten = f"{raw} {cat} regulations CMR 2017 MSHA OSHA safety precautions"
+            eq = entities.get("equipment", "")
+            hz = entities.get("hazard", "")
+            rewritten = f"{raw} {eq} {hz} {cat} regulations CMR 2017 MSHA OSHA safety precautions"
         return {"query": rewritten}
 
     def _node_hybrid_retrieve(self, state: MineSafetyState) -> Dict[str, Any]:
@@ -90,7 +102,7 @@ class LangGraphMineSafetyEngine:
         res = self.rag_engine.answer_query(state["raw_query"], model_override=state.get("model_override"))
         telemetry = state.get("telemetry", {})
         telemetry.update(res["telemetry"])
-        return {"prevention_plan": res["answer"], "citations": res["citations"], "telemetry": telemetry}
+        return {"prevention_plan": res["answer"], "citations": res["citations"], "entities": res.get("entities", {}), "telemetry": telemetry}
 
     def run_safety_query(self, query: str, model_override: Optional[str] = None, human_approved: bool = False) -> Dict[str, Any]:
         guard_res = self.guardrails.check_input(query)
@@ -109,13 +121,14 @@ class LangGraphMineSafetyEngine:
 
         initial_state: MineSafetyState = {
             "raw_query": query, "query": query, "tier": "", "intent": "", "requires_human_approval": False, "target_tool": None,
-            "mine_type": "", "depth_m": 0, "hazard_category": "", "retrieved_docs": [], "prelevance_passed": False,
+            "mine_type": "", "depth_m": 0, "hazard_category": "", "extracted_entities": {}, "retrieved_docs": [], "prelevance_passed": False,
             "prevention_plan": "", "citations": [], "telemetry": {}, "model_override": model_override, "human_approved": human_approved
         }
         
         final_state = self.graph.invoke(initial_state)
         response = {
             "query": query, "mine_type": final_state.get("mine_type"), "hazard_category": final_state.get("hazard_category"),
+            "extracted_entities": final_state.get("extracted_entities", {}),
             "answer": final_state.get("prevention_plan"), "citations": final_state.get("citations", []), "telemetry": final_state.get("telemetry", {})
         }
         if final_state.get("prelevance_passed", False):
