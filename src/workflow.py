@@ -107,7 +107,7 @@ class LangGraphMineSafetyEngine:
     def run_safety_query(self, query: str, model_override: Optional[str] = None, human_approved: bool = False) -> Dict[str, Any]:
         guard_res = self.guardrails.check_input(query)
         if not guard_res["passed"]:
-            return {"query": query, "answer": guard_res["reason"], "citations": [], "telemetry": {"total_latency_ms": 1.0, "llm_used": "Input Guardrail Refusal"}}
+            return {"query": query, "answer": guard_res["reason"], "citations": [], "retrieved_docs": [], "prelevance_passed": False, "telemetry": {"total_latency_ms": 1.0, "llm_used": "Input Guardrail Refusal"}}
 
         cached = self.cache.get(query)
         if cached:
@@ -129,6 +129,8 @@ class LangGraphMineSafetyEngine:
         response = {
             "query": query, "mine_type": final_state.get("mine_type"), "hazard_category": final_state.get("hazard_category"),
             "extracted_entities": final_state.get("extracted_entities", {}),
+            "retrieved_docs": final_state.get("retrieved_docs", []),
+            "prelevance_passed": final_state.get("prelevance_passed", True),
             "answer": final_state.get("prevention_plan"), "citations": final_state.get("citations", []), "telemetry": final_state.get("telemetry", {})
         }
         if final_state.get("prelevance_passed", False):
