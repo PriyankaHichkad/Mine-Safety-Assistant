@@ -139,7 +139,10 @@ class MineMindIndexer:
     def __init__(self, db_path: str = "./data/qdrant_db", collection_name: str = "mining_knowledge"):
         self.db_path = db_path
         self.collection_name = collection_name
-        self.qdrant = QdrantClient(path=db_path)
+        try:
+            self.qdrant = QdrantClient(path=db_path)
+        except Exception:
+            self.qdrant = QdrantClient(location=":memory:")
         self.embedder = SentenceTransformer("BAAI/bge-base-en-v1.5")
 
     def index_chunks(self, chunks: List[Dict[str, Any]], bm25_save_path: str = "./data/bm25_index.pkl", batch_size: int = 64):

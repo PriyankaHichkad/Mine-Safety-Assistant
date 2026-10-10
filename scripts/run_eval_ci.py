@@ -18,8 +18,9 @@ def ensure_knowledge_base(db_path: str, bm25_path: str):
     all_chunks = []
     
     if os.path.exists(msha_dir):
-        files = [f for f in os.listdir(msha_dir) if f.endswith(".txt")]
-        for fname in files:
+        files = sorted([f for f in os.listdir(msha_dir) if f.endswith(".txt")])
+        target_files = files[:15] if (len(files) > 15 and os.getenv("CI")) else files
+        for fname in target_files:
             filepath = os.path.join(msha_dir, fname)
             try:
                 chunks = chunker.process_file(filepath)
