@@ -10,9 +10,10 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
-# DVC internal cache & lock files
+# DVC internal cache, config & lock files
 .dvc/cache/
 .dvc/tmp/
+.dvc/config.local
 
 # Ignore ALL data contents except .dvc files and json metadata
 data/*

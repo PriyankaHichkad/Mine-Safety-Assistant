@@ -277,7 +277,7 @@ class MineMindHybridRetriever:
 # 4. DYNAMIC STATISTICAL RISK ANALYZER
 # ==========================================
 class MineSafetyRiskAnalyzer:
-    """Calculates mathematical accident occurrence & fatality probabilities over corpus."""
+    """Calculates empirical hazard prevalence & fatality distribution over ingested incident report corpus."""
     def __init__(self, reports_dir: str = "./data/msha_reports"):
         self.reports_dir = reports_dir
 
@@ -311,11 +311,16 @@ class MineSafetyRiskAnalyzer:
                 except Exception:
                     pass
 
-        if total_reports == 0:
-            total_reports, hazard_matches, fatal_matches = 1324, 145, 94
-        if hazard_matches == 0:
-            hazard_matches = max(1, int(total_reports * 0.08))
-            fatal_matches = max(1, int(hazard_matches * 0.65))
+        if total_reports == 0 or hazard_matches == 0:
+            return {
+                "category_label": category,
+                "total_reports": total_reports,
+                "hazard_matches": hazard_matches,
+                "fatal_matches": fatal_matches,
+                "prob_accident_occurrence": 0.0,
+                "prob_fatality_given_accident": 0.0,
+                "status": "no_matching_reports_in_corpus"
+            }
 
         return {
             "category_label": category,
@@ -324,6 +329,7 @@ class MineSafetyRiskAnalyzer:
             "fatal_matches": fatal_matches,
             "prob_accident_occurrence": round((hazard_matches / total_reports) * 100.0, 2),
             "prob_fatality_given_accident": round((fatal_matches / hazard_matches) * 100.0, 2),
+            "status": "computed_over_corpus"
         }
 
 # ==========================================

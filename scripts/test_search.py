@@ -4,7 +4,7 @@ import sys
 # Add project root to python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.retrieval.hybrid_search import MineMindHybridRetriever
+from src.engine import MineMindHybridRetriever
 
 def main():
     print("=== Testing MineMind Hybrid Search Engine ===")

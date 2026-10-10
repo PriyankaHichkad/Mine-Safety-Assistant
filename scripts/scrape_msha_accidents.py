@@ -1,3 +1,11 @@
+"""
+MSHA Reference Incident Corpus Generator
+---------------------------------------
+Generates a structured reference corpus of 50+ MSHA & DGMS fatality investigation reports
+covering major mining hazards (Fires, Roof Falls, Explosions, Haulage, Electrical).
+Used by CI workflows and local environments to index structured safety data.
+"""
+
 import os
 import json
 from typing import List, Dict, Any

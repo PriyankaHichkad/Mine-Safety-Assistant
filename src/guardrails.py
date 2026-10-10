@@ -18,7 +18,8 @@ class SafetyGuardrails:
             "blast", "flyrock", "msha", "dgms", "osha", "cmr", "omr", "rule", "rules", "regulation", 
             "hazard", "cause", "probability", "prevention", "dust", "inundation", "flood", "water", 
             "coal", "seam", "bench", "pit", "underground", "opencast", "surface", "equipment", 
-            "machinery", "conveyor", "excavator", "shovel", "quarry", "worker", "miner", "injury"
+            "machinery", "conveyor", "excavator", "shovel", "quarry", "worker", "miner", "injury",
+            "emergency", "halt"
         ]
 
     def check_input(self, query: str) -> Dict[str, Any]:

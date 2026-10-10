@@ -6,7 +6,7 @@ import streamlit as st
 # Add project root to python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.graph.safety_graph import LangGraphMineSafetyEngine
+from src.workflow import LangGraphMineSafetyEngine
 
 # Page Configuration
 st.set_page_config(

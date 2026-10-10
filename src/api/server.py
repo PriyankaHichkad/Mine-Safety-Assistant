@@ -9,8 +9,7 @@ from pydantic import BaseModel
 # Add project root to python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from src.retrieval.hybrid_search import MineMindHybridRetriever
-from src.generation.rag_engine import MineMindRAGEngine
+from src.engine import MineMindHybridRetriever, MineMindRAGEngine
 
 app = FastAPI(
     title="MineMind Mining AI & Regulatory Compliance API",
