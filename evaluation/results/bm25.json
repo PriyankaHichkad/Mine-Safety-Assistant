@@ -11,7 +11,17 @@
   "mrr@5": 0.8797222222222223,
   "guardrail_false_refusal": 0.0,
   "ood_refusal": 1.0,
-  "injection_block": 1.0
+  "injection_block": 1.0,
+  "retrieval_latency": {
+   "mean_ms": 0.26,
+   "p50_ms": 0.25,
+   "p95_ms": 0.43
+  },
+  "e2e_latency": {
+   "mean_ms": 0.45,
+   "p50_ms": 0.33,
+   "p95_ms": 1.76
+  }
  },
  "by_type": {
   "cause": {
@@ -52,6 +62,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.43,
+   "e2e_ms": 1.95,
    "relevant": [
     "MSHA-FAT-DUMP-01"
    ],
@@ -74,6 +86,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.4,
+   "e2e_ms": 1.76,
    "relevant": [
     "MSHA-FAT-BLAST-01"
    ],
@@ -96,6 +110,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.23,
+   "e2e_ms": 0.33,
    "relevant": [
     "MSHA-FAT-BLAST-02"
    ],
@@ -118,6 +134,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.24,
+   "e2e_ms": 0.34,
    "relevant": [
     "MSHA-FAT-BLAST-03"
    ],
@@ -140,6 +158,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.5,
+   "retrieval_ms": 0.26,
+   "e2e_ms": 0.33,
    "relevant": [
     "MSHA-FAT-BLAST-04"
    ],
@@ -162,6 +182,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.26,
+   "e2e_ms": 0.34,
    "relevant": [
     "MSHA-FAT-DUMP-02"
    ],
@@ -184,6 +206,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.26,
+   "e2e_ms": 0.33,
    "relevant": [
     "MSHA-FAT-DUMP-03"
    ],
@@ -206,6 +230,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.27,
+   "e2e_ms": 0.34,
    "relevant": [
     "MSHA-FAT-DUMP-04"
    ],
@@ -228,6 +254,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.25,
+   "retrieval_ms": 0.3,
+   "e2e_ms": 3.12,
    "relevant": [
     "MSHA-FAT-DUMP-05"
    ],
@@ -250,6 +278,8 @@
    "precision@5": 0.0,
    "precision_ceiling": 0.2,
    "rr@5": 0.0,
+   "retrieval_ms": 0.6,
+   "e2e_ms": 0.78,
    "relevant": [
     "MSHA-FAT-ELEC-01"
    ],
@@ -272,6 +302,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.41,
+   "e2e_ms": 0.59,
    "relevant": [
     "MSHA-FAT-ELEC-02"
    ],
@@ -294,6 +326,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.22,
+   "e2e_ms": 0.32,
    "relevant": [
     "MSHA-FAT-ELEC-03"
    ],
@@ -316,6 +350,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.33,
+   "e2e_ms": 0.44,
    "relevant": [
     "MSHA-FAT-ELEC-05"
    ],
@@ -338,6 +374,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.18,
+   "e2e_ms": 0.26,
    "relevant": [
     "MSHA-FAT-EXP-01"
    ],
@@ -360,6 +398,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.28,
+   "e2e_ms": 0.39,
    "relevant": [
     "MSHA-FAT-EXP-02"
    ],
@@ -382,6 +422,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.24,
+   "e2e_ms": 0.31,
    "relevant": [
     "MSHA-FAT-EXP-03"
    ],
@@ -404,6 +446,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.25,
+   "e2e_ms": 0.33,
    "relevant": [
     "MSHA-FAT-EXP-05"
    ],
@@ -426,6 +470,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.25,
+   "e2e_ms": 0.32,
    "relevant": [
     "MSHA-FAT-FIRE-01"
    ],
@@ -448,6 +494,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.26,
+   "e2e_ms": 0.37,
    "relevant": [
     "MSHA-FAT-FIRE-02"
    ],
@@ -470,6 +518,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.27,
+   "e2e_ms": 0.34,
    "relevant": [
     "MSHA-FAT-FIRE-04"
    ],
@@ -492,6 +542,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.24,
+   "e2e_ms": 0.31,
    "relevant": [
     "MSHA-FAT-HAUL-01"
    ],
@@ -514,6 +566,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.28,
+   "e2e_ms": 0.4,
    "relevant": [
     "MSHA-FAT-HAUL-02"
    ],
@@ -536,6 +590,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.25,
+   "e2e_ms": 0.33,
    "relevant": [
     "MSHA-FAT-HAUL-03"
    ],
@@ -558,6 +614,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.36,
+   "e2e_ms": 0.46,
    "relevant": [
     "MSHA-FAT-HAUL-05"
    ],
@@ -580,6 +638,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.41,
+   "e2e_ms": 0.59,
    "relevant": [
     "MSHA-FAT-INUN-01"
    ],
@@ -602,6 +662,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.35,
+   "e2e_ms": 0.6,
    "relevant": [
     "MSHA-FAT-INUN-03"
    ],
@@ -624,6 +686,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.42,
+   "e2e_ms": 0.59,
    "relevant": [
     "MSHA-FAT-ROOF-01"
    ],
@@ -646,6 +710,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.28,
+   "e2e_ms": 0.38,
    "relevant": [
     "MSHA-FAT-ROOF-04"
    ],
@@ -668,6 +734,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.31,
+   "e2e_ms": 0.46,
    "relevant": [
     "MSHA-FAT-ROOF-05"
    ],
@@ -690,6 +758,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.42,
+   "e2e_ms": 0.66,
    "relevant": [
     "MSHA-FAT-ROOF-03"
    ],
@@ -712,6 +782,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.25,
+   "e2e_ms": 0.32,
    "relevant": [
     "MSHA-FAT-DUMP-01"
    ],
@@ -734,6 +806,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.5,
+   "retrieval_ms": 0.19,
+   "e2e_ms": 0.27,
    "relevant": [
     "MSHA-FAT-DUMP-02"
    ],
@@ -756,6 +830,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.18,
+   "e2e_ms": 0.26,
    "relevant": [
     "MSHA-FAT-EXP-01"
    ],
@@ -778,6 +854,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.32,
+   "e2e_ms": 0.39,
    "relevant": [
     "MSHA-FAT-EXP-04"
    ],
@@ -800,6 +878,8 @@
    "precision@5": 0.4,
    "precision_ceiling": 0.4,
    "rr@5": 1.0,
+   "retrieval_ms": 0.18,
+   "e2e_ms": 0.27,
    "relevant": [
     "MSHA-FAT-ELEC-04",
     "MSHA-FAT-EXP-05"
@@ -823,6 +903,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.22,
+   "e2e_ms": 0.31,
    "relevant": [
     "MSHA-FAT-FIRE-01"
    ],
@@ -845,6 +927,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.3,
+   "e2e_ms": 0.57,
    "relevant": [
     "MSHA-FAT-INUN-02"
    ],
@@ -867,6 +951,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.29,
+   "e2e_ms": 0.41,
    "relevant": [
     "MSHA-FAT-INUN-01"
    ],
@@ -889,6 +975,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.16,
+   "e2e_ms": 0.25,
    "relevant": [
     "MSHA-FAT-ROOF-01"
    ],
@@ -911,6 +999,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.29,
+   "e2e_ms": 0.39,
    "relevant": [
     "MSHA-FAT-BLAST-03"
    ],
@@ -933,6 +1023,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.21,
+   "e2e_ms": 0.32,
    "relevant": [
     "MSHA-FAT-BLAST-01"
    ],
@@ -955,6 +1047,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.5,
+   "retrieval_ms": 0.22,
+   "e2e_ms": 0.33,
    "relevant": [
     "MSHA-FAT-ELEC-02"
    ],
@@ -977,6 +1071,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.14,
+   "e2e_ms": 0.22,
    "relevant": [
     "MSHA-FAT-ELEC-03"
    ],
@@ -999,6 +1095,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.21,
+   "e2e_ms": 0.34,
    "relevant": [
     "MSHA-FAT-INUN-04"
    ],
@@ -1021,6 +1119,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.18,
+   "e2e_ms": 0.26,
    "relevant": [
     "MSHA-FAT-HAUL-01"
    ],
@@ -1043,6 +1143,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.2,
+   "e2e_ms": 0.28,
    "relevant": [
     "MSHA-FAT-HAUL-04"
    ],
@@ -1065,6 +1167,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.17,
+   "e2e_ms": 0.25,
    "relevant": [
     "MSHA-FAT-HAUL-02"
    ],
@@ -1087,6 +1191,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.5,
+   "retrieval_ms": 0.18,
+   "e2e_ms": 0.31,
    "relevant": [
     "MSHA-FAT-HAUL-03"
    ],
@@ -1109,6 +1215,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.3333333333333333,
+   "retrieval_ms": 0.2,
+   "e2e_ms": 0.3,
    "relevant": [
     "MSHA-FAT-HAUL-05"
    ],
@@ -1131,6 +1239,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 0.2,
+   "retrieval_ms": 0.18,
+   "e2e_ms": 0.26,
    "relevant": [
     "MSHA-FAT-ROOF-02"
    ],
@@ -1153,6 +1263,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.43,
+   "e2e_ms": 0.57,
    "relevant": [
     "MSHA-FAT-EXP-02"
    ],
@@ -1175,6 +1287,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.3,
+   "e2e_ms": 0.41,
    "relevant": [
     "MSHA-FAT-ROOF-04"
    ],
@@ -1197,6 +1311,8 @@
    "precision@5": 0.6,
    "precision_ceiling": 0.8,
    "rr@5": 1.0,
+   "retrieval_ms": 0.24,
+   "e2e_ms": 0.38,
    "relevant": [
     "MSHA-FAT-FIRE-03",
     "MSHA-FAT-HAUL-02",
@@ -1222,6 +1338,8 @@
    "precision@5": 0.4,
    "precision_ceiling": 0.4,
    "rr@5": 1.0,
+   "retrieval_ms": 0.23,
+   "e2e_ms": 0.31,
    "relevant": [
     "MSHA-FAT-ELEC-04",
     "MSHA-FAT-EXP-05"
@@ -1245,6 +1363,8 @@
    "precision@5": 0.0,
    "precision_ceiling": 0.2,
    "rr@5": 0.0,
+   "retrieval_ms": 0.09,
+   "e2e_ms": 0.18,
    "relevant": [
     "MSHA-FAT-FIRE-04"
    ],
@@ -1267,6 +1387,8 @@
    "precision@5": 0.0,
    "precision_ceiling": 0.2,
    "rr@5": 0.0,
+   "retrieval_ms": 0.1,
+   "e2e_ms": 0.18,
    "relevant": [
     "MSHA-FAT-HAUL-01"
    ],
@@ -1289,6 +1411,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.12,
+   "e2e_ms": 0.2,
    "relevant": [
     "MSHA-FAT-ROOF-02"
    ],
@@ -1311,6 +1435,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.09,
+   "e2e_ms": 0.17,
    "relevant": [
     "MSHA-FAT-DUMP-03"
    ],
@@ -1333,6 +1459,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.14,
+   "e2e_ms": 0.21,
    "relevant": [
     "MSHA-FAT-FIRE-04"
    ],
@@ -1355,6 +1483,8 @@
    "precision@5": 0.2,
    "precision_ceiling": 0.2,
    "rr@5": 1.0,
+   "retrieval_ms": 0.2,
+   "e2e_ms": 0.29,
    "relevant": [
     "MSHA-FAT-BLAST-02"
    ],

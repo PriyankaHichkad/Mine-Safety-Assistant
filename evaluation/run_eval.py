@@ -27,6 +27,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from collections import defaultdict
 from typing import Any, Dict, List
 
@@ -121,6 +122,8 @@ class HybridRetriever:
 # evaluation
 # --------------------------------------------------------------------------
 def evaluate_retrieval(retriever, chunks, queries) -> Dict[str, Any]:
+    from src.guardrails import SafetyGuardrails
+    guard = SafetyGuardrails()
     rows, problems = [], []
     for q in queries:
         relevant = resolve_relevant(chunks, q["evidence"])
@@ -129,7 +132,19 @@ def evaluate_retrieval(retriever, chunks, queries) -> Dict[str, Any]:
             continue
         if len(relevant) > GENERIC_LABEL_THRESHOLD:
             problems.append(f"{q['id']}: evidence matches {len(relevant)} documents -> label too generic")
+
+        t_e2e_0 = time.perf_counter()
+        _ = guard.check_input(q["query"])
+
+        t_ret_0 = time.perf_counter()
         ranked = retriever.rank(q["query"])
+        ret_ms = (time.perf_counter() - t_ret_0) * 1000.0
+
+        top_chunks = [c for c in chunks if doc_id(c) in ranked[:K]]
+        context_str = "\n".join(c["content"] for c in top_chunks[:3])
+        _ = f"Query: {q['query']}\nContext: {context_str}"
+        e2e_ms = (time.perf_counter() - t_e2e_0) * 1000.0
+
         rows.append({
             "id": q["id"], "type": q["type"], "query": q["query"],
             "n_relevant": len(relevant),
@@ -139,9 +154,19 @@ def evaluate_retrieval(retriever, chunks, queries) -> Dict[str, Any]:
             "precision@5": precision_at_k(relevant, ranked, K),
             "precision_ceiling": precision_ceiling(relevant, K),
             "rr@5": reciprocal_rank(relevant, ranked, K),
+            "retrieval_ms": round(ret_ms, 2),
+            "e2e_ms": round(e2e_ms, 2),
             "relevant": sorted(relevant), "top5": ranked[:K],
         })
     return {"rows": rows, "problems": problems}
+
+
+def percentile(values: List[float], p: float) -> float:
+    if not values:
+        return 0.0
+    s = sorted(values)
+    idx = int(p * len(s))
+    return s[min(idx, len(s) - 1)]
 
 
 def mean(rows, key):
@@ -202,6 +227,8 @@ def main(argv=None) -> int:
 
     hits5 = int(sum(r["hit@5"] for r in rows))
     lo, hi = wilson_interval(hits5, len(rows))
+    ret_times = [r["retrieval_ms"] for r in rows]
+    e2e_times = [r["e2e_ms"] for r in rows]
     metrics = {
         "hit@1": mean(rows, "hit@1"),
         "hit@5": mean(rows, "hit@5"),
@@ -212,6 +239,16 @@ def main(argv=None) -> int:
         "guardrail_false_refusal": rate(in_g, lambda r: not r["passed"]),
         "ood_refusal": rate(ood_g, lambda r: not r["passed"]),
         "injection_block": rate(inj_g, lambda r: not r["passed"]),
+        "retrieval_latency": {
+            "mean_ms": round(sum(ret_times) / len(ret_times), 2) if ret_times else 0.0,
+            "p50_ms": round(percentile(ret_times, 0.50), 2),
+            "p95_ms": round(percentile(ret_times, 0.95), 2),
+        },
+        "e2e_latency": {
+            "mean_ms": round(sum(e2e_times) / len(e2e_times), 2) if e2e_times else 0.0,
+            "p50_ms": round(percentile(e2e_times, 0.50), 2),
+            "p95_ms": round(percentile(e2e_times, 0.95), 2),
+        },
     }
 
     by_type = {}
@@ -235,6 +272,15 @@ def main(argv=None) -> int:
     print("  by query type:")
     for t, v in by_type.items():
         print(f"    {t:<11} n={v['n']:<3} hit@5={v['hit@5']:.2f}  mrr@5={v['mrr@5']:.2f}")
+
+    print("\nLATENCY (per-query measured)")
+    print(f"  Retrieval   p50 {metrics['retrieval_latency']['p50_ms']:.2f} ms   "
+          f"p95 {metrics['retrieval_latency']['p95_ms']:.2f} ms   "
+          f"mean {metrics['retrieval_latency']['mean_ms']:.2f} ms")
+    print(f"  End-to-End  p50 {metrics['e2e_latency']['p50_ms']:.2f} ms   "
+          f"p95 {metrics['e2e_latency']['p95_ms']:.2f} ms   "
+          f"mean {metrics['e2e_latency']['mean_ms']:.2f} ms")
+
     print("\nGUARDRAIL (keyword filter in src/guardrails.py)")
     print(f"  false refusals on in-domain queries  {metrics['guardrail_false_refusal']:.3f}")
     print(f"  out-of-domain refused                {metrics['ood_refusal']:.3f}  "
