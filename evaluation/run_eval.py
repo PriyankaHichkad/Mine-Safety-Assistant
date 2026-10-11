@@ -133,7 +133,7 @@ def evaluate_retrieval(retriever, chunks, queries) -> Dict[str, Any]:
         if len(relevant) > GENERIC_LABEL_THRESHOLD:
             problems.append(f"{q['id']}: evidence matches {len(relevant)} documents -> label too generic")
 
-        t_e2e_0 = time.perf_counter()
+        t_rg_0 = time.perf_counter()
         _ = guard.check_input(q["query"])
 
         t_ret_0 = time.perf_counter()
@@ -143,7 +143,7 @@ def evaluate_retrieval(retriever, chunks, queries) -> Dict[str, Any]:
         top_chunks = [c for c in chunks if doc_id(c) in ranked[:K]]
         context_str = "\n".join(c["content"] for c in top_chunks[:3])
         _ = f"Query: {q['query']}\nContext: {context_str}"
-        e2e_ms = (time.perf_counter() - t_e2e_0) * 1000.0
+        retrieval_guardrail_ms = (time.perf_counter() - t_rg_0) * 1000.0
 
         rows.append({
             "id": q["id"], "type": q["type"], "query": q["query"],
@@ -155,7 +155,7 @@ def evaluate_retrieval(retriever, chunks, queries) -> Dict[str, Any]:
             "precision_ceiling": precision_ceiling(relevant, K),
             "rr@5": reciprocal_rank(relevant, ranked, K),
             "retrieval_ms": round(ret_ms, 2),
-            "e2e_ms": round(e2e_ms, 2),
+            "retrieval_guardrail_ms": round(retrieval_guardrail_ms, 2),
             "relevant": sorted(relevant), "top5": ranked[:K],
         })
     return {"rows": rows, "problems": problems}
@@ -228,7 +228,7 @@ def main(argv=None) -> int:
     hits5 = int(sum(r["hit@5"] for r in rows))
     lo, hi = wilson_interval(hits5, len(rows))
     ret_times = [r["retrieval_ms"] for r in rows]
-    e2e_times = [r["e2e_ms"] for r in rows]
+    rg_times = [r["retrieval_guardrail_ms"] for r in rows]
     metrics = {
         "hit@1": mean(rows, "hit@1"),
         "hit@5": mean(rows, "hit@5"),
@@ -244,10 +244,10 @@ def main(argv=None) -> int:
             "p50_ms": round(percentile(ret_times, 0.50), 2),
             "p95_ms": round(percentile(ret_times, 0.95), 2),
         },
-        "e2e_latency": {
-            "mean_ms": round(sum(e2e_times) / len(e2e_times), 2) if e2e_times else 0.0,
-            "p50_ms": round(percentile(e2e_times, 0.50), 2),
-            "p95_ms": round(percentile(e2e_times, 0.95), 2),
+        "retrieval_guardrail_latency": {
+            "mean_ms": round(sum(rg_times) / len(rg_times), 2) if rg_times else 0.0,
+            "p50_ms": round(percentile(rg_times, 0.50), 2),
+            "p95_ms": round(percentile(rg_times, 0.95), 2),
         },
     }
 
@@ -274,12 +274,12 @@ def main(argv=None) -> int:
         print(f"    {t:<11} n={v['n']:<3} hit@5={v['hit@5']:.2f}  mrr@5={v['mrr@5']:.2f}")
 
     print("\nLATENCY (per-query measured)")
-    print(f"  Retrieval   p50 {metrics['retrieval_latency']['p50_ms']:.2f} ms   "
+    print(f"  Retrieval              p50 {metrics['retrieval_latency']['p50_ms']:.2f} ms   "
           f"p95 {metrics['retrieval_latency']['p95_ms']:.2f} ms   "
           f"mean {metrics['retrieval_latency']['mean_ms']:.2f} ms")
-    print(f"  End-to-End  p50 {metrics['e2e_latency']['p50_ms']:.2f} ms   "
-          f"p95 {metrics['e2e_latency']['p95_ms']:.2f} ms   "
-          f"mean {metrics['e2e_latency']['mean_ms']:.2f} ms")
+    print(f"  Retrieval + Guardrail  p50 {metrics['retrieval_guardrail_latency']['p50_ms']:.2f} ms   "
+          f"p95 {metrics['retrieval_guardrail_latency']['p95_ms']:.2f} ms   "
+          f"mean {metrics['retrieval_guardrail_latency']['mean_ms']:.2f} ms")
 
     print("\nGUARDRAIL (keyword filter in src/guardrails.py)")
     print(f"  false refusals on in-domain queries  {metrics['guardrail_false_refusal']:.3f}")
