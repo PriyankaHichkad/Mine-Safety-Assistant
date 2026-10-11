@@ -32,3 +32,6 @@ data/production_audit_logs.jsonl
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Evaluation run output
+evaluation/results/
