@@ -34,4 +34,6 @@ data/production_audit_logs.jsonl
 Thumbs.db
 
 # Evaluation run output
-evaluation/results/
+evaluation/results/*
+!evaluation/results/*.json
+evaluation/results/latest.json
