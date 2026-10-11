@@ -66,11 +66,11 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 
 ### 2. Engineering & Data Science Tradeoffs
 
-- **Bi-Encoder vs. Cross-Encoder Tradeoff**: Dense bi-encoder search (`bge-base-en-v1.5`) offers ultra-fast candidate retrieval (~12ms for top-15) but lacks deep query-document cross-attention. Adding `bge-reranker-base` cross-encoder reranking increased top-5 contextual passage relevance from **74.1% to 91.4%**.
-- **Sparse BM25 vs. Dense Vector Retrieval**: Sparse BM25 excels at exact statutory codes (e.g. *"CMR 2017 Regulation 143"*), achieving 98.2% Precision@1 on keyword queries, but drops on natural language paraphrases. Hybrid Reciprocal Rank Fusion (RRF with $k=60$) combining dense `bge-base-en-v1.5` embeddings and BM25 achieves optimal balance: **100.0% Hit@5**, **99.6% Recall@5**, and an **MRR@5 of 0.989**.
+- **Bi-Encoder vs. Cross-Encoder Tradeoff**: Dense bi-encoder search (`bge-base-en-v1.5`) performs candidate retrieval over vector space but lacks deep token-level query-document cross-attention. Adding `bge-reranker-base` cross-encoder reranking increased top-5 contextual passage relevance from **74.1% to 91.4%**.
+- **Sparse BM25 vs. Dense Vector Retrieval**: Sparse BM25 excels at exact statutory codes (e.g. *"CMR 2017 Regulation 143"*), achieving **100% Hit@5 and 1.00 MRR** on statutory regulation queries, but drops to **50% Hit@5** on terse acronym queries (`q055`, `q056`). Hybrid Reciprocal Rank Fusion (RRF with $k=60$) combining dense `bge-base-en-v1.5` embeddings and BM25 achieves optimal balance across all query types: **100.0% Hit@5**, **99.6% Recall@5**, and an **MRR@5 of 0.989**.
 - **Measured Latency SLAs (Per-Query Timed)**:
   - **Sparse BM25**: Sub-millisecond execution with **p50 = 0.22 ms** and **p95 = 0.38 ms** retrieval latency (retrieval + guardrail: **p50 = 0.31 ms**, **p95 = 1.15 ms**).
-  - **Hybrid RRF (Dense Vectors + Cross-Encoder Reranker)**: Deep cross-attention over local CPU execution averages **p50 = 8.08 s** and **p95 = 10.80 s** (reducing to **~42 ms** on GPU).
+  - **Hybrid RRF (Dense Vectors + Cross-Encoder Reranker)**: Deep cross-attention over local CPU execution averages **p50 = 8.08 s** and **p95 = 10.80 s** due to transformer inference over candidate pairs.
   - All per-query latencies are recorded in the committed raw output files [`evaluation/results/bm25.json`](evaluation/results/bm25.json) and [`evaluation/results/hybrid.json`](evaluation/results/hybrid.json).
 - **In-Memory vs. Disk-Persisted Qdrant**: For headless CI runners and fast evaluation, lightweight zero-disk operation provides instant startup, while local disk persistence (`./data/qdrant_db`) preserves pre-embedded chunk vectors across restarts.
 
