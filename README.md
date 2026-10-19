@@ -47,7 +47,6 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Retrieval Recall@5** | **94.6%** | **99.6%** | $\ge 90.0\%$ | **PASSED** |
 | **Mean Reciprocal Rank (MRR@5)** | **0.880** | **0.989** | $\ge 0.600$ | **PASSED** |
 | **Document Hit@1 (Top Rank)** | **83.3%** | **98.3%** | — | — |
-| **Reranked Passage Precision@5** | 74.1% | **91.4%** | $\ge 85.0\%$ | **PASSED** |
 | **Document Precision@5** | **20.3%** (ceil: 21.7%) | **21.3%** (ceil: 21.7%) | Theoretical Ceiling | **BOUNDED** |
 | **Out-of-Domain Refusal Rate** | **100.0%** (12/12) | **100.0%** (12/12) | $\ge 80.0\%$ | **PASSED** |
 | **Adversarial Injection Block Rate** | **100.0%** (6/6) | **100.0%** (6/6) | $\ge 80.0\%$ | **PASSED** |
@@ -57,19 +56,17 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Retrieval + Guardrail Latency (p50)** | **0.31 ms** | **8,081.80 ms** (CPU) | Real query timing | **MEASURED** |
 | **Retrieval + Guardrail Latency (p95)** | **1.15 ms** | **10,801.38 ms** (CPU) | Real query timing | **MEASURED** |
 
-> **Metric Distinctions & Benchmark Alignment**:
-> - **Reranked Passage Precision@5 (91.4%)**: When the Cross-Encoder (`bge-reranker-base`) filters candidate chunks down to the top 5 passages sent to the LLM context window, **91.4% of those retrieved text passages are directly relevant to the hazard scenario, eliminating context noise**. This corresponds directly to the 91.4% Precision@5 reported in the evaluation benchmark.
-> - **Document Precision@5 (21.3%)**: Evaluated under document deduplication where each incident query targets a single ground-truth report. Returning 5 documents results in a mathematical maximum ceiling of $\min(|\text{Relevant}|, 5) / 5 \approx 21.7\%$.
-> - **Evaluation Suite Scope ($N=150$ vs $N=78$ CI Gate)**: The repository provides two evaluation datasets:
->   1. **Comprehensive Benchmark ($N=150$ queries in [`evaluation/golden_set_150.json`](evaluation/golden_set_150.json))**: Evaluates 100 core domain queries, 25 out-of-domain edge cases, and 25 adversarial prompt injections, achieving **96.8% Recall@5**, **91.4% Passage Precision@5**, and **94.7% Citation Grounding** (142/150 passed factual grounding checks). Raw per-query timing and rankings are committed in [`evaluation/results/bm25_150.json`](evaluation/results/bm25_150.json). Anyone can run this suite with: `python evaluation/run_eval.py --golden evaluation/golden_set_150.json`.
->   2. **Automated CI Quality Gate ($N=78$ queries in [`evaluation/golden_set.json`](evaluation/golden_set.json))**: A deterministic subset running in GitHub Actions dual CI workflows to enforce instant gate validation on every commit without external API overhead.
+> **Evaluation Methodology & Benchmark Datasets**:
+> - **Precision@5 vs. Hit@5 & MRR**: Document Precision@5 is mathematically capped near ~21% (theoretical ceiling: 21.7% on the 78-query suite, 21.4% on the 150-query suite) because each accident scenario targets ~1 specific historical incident report. Therefore, **Hit@5** (finding the relevant report in top 5) and **MRR@5** (ranking it at #1 or #2) are the primary IR quality metrics.
+> - **150-Query Benchmark Suite ([`evaluation/golden_set_150.json`](evaluation/golden_set_150.json))**: Contains 100 in-domain technical queries, 25 out-of-domain edge cases, and 25 adversarial prompt injections. On this suite, BM25 alone achieves **Recall@5 of 96.8%**, **Hit@5 of 97.0%**, and an **MRR@5 of 0.900** (raw results committed in [`evaluation/results/bm25_150.json`](evaluation/results/bm25_150.json)).
+> - **78-Query Hybrid CI Quality Gate ([`evaluation/golden_set.json`](evaluation/golden_set.json))**: Evaluates the full hybrid pipeline (Dense `bge-base-en-v1.5` + BM25 + RRF + Cross-Encoder `bge-reranker-base`) across the 38-document reference corpus, achieving **100.0% Hit@5**, **99.6% Recall@5**, and **0.989 MRR@5**.
 > - **Measured Per-Query Latency**: Every query is timed dynamically during evaluation (measuring retrieval and guardrail filtering without external LLM calls) and committed to raw JSON files, reporting exact p50, p95, and mean percentiles.
 
 ---
 
 ### 2. Engineering & Data Science Tradeoffs
 
-- **Bi-Encoder vs. Cross-Encoder Tradeoff**: Dense bi-encoder search (`bge-base-en-v1.5`) performs candidate retrieval over vector space but lacks deep token-level query-document cross-attention. Adding `bge-reranker-base` cross-encoder reranking filters candidate chunks down to the top 5 passages sent to the LLM context window, increasing top-5 contextual passage precision from **74.1% to 91.4%** and eliminating context noise.
+- **Bi-Encoder vs. Cross-Encoder Tradeoff**: Dense bi-encoder search (`bge-base-en-v1.5`) performs candidate retrieval over vector space but lacks deep token-level query-document cross-attention. Adding `bge-reranker-base` cross-encoder reranking over RRF candidate pairs boosts **MRR@5 from 0.880 to 0.989** and **Hit@5 from 95.0% to 100.0%**, successfully resolving all BM25 lexical misses at the cost of cross-attention latency.
 - **Sparse BM25 vs. Dense Vector Retrieval**: Sparse BM25 excels at exact statutory codes (e.g. *"CMR 2017 Regulation 143"*), achieving **100% Hit@5 and 1.00 MRR** on statutory regulation queries, but drops to **50% Hit@5** on terse acronym queries (`q055`, `q056`). Hybrid Reciprocal Rank Fusion (RRF with $k=60$) combining dense `bge-base-en-v1.5` embeddings and BM25 achieves optimal balance across all query types: **100.0% Hit@5**, **99.6% Recall@5**, and an **MRR@5 of 0.989**.
 - **Measured Latency SLAs (Per-Query Timed)**:
   - **Sparse BM25**: Sub-millisecond execution with **p50 = 0.22 ms** and **p95 = 0.38 ms** retrieval latency (retrieval + guardrail: **p50 = 0.31 ms**, **p95 = 1.15 ms**).
@@ -130,7 +127,7 @@ On the 60 in-domain evaluation queries, sparse BM25 encountered **3 retrieval mi
    - 100% of PDF and TXT report datasets version-controlled via DVC (`data/*.dvc`) and stored on DAGsHub cloud storage (`https://dagshub.com/PriyankaHichkad/Mine-Safety-Assistant.dvc`).
 
 6. **Dual GitHub Actions CI/CD Quality Gates (`.github/workflows/`)**:
-   - Automated GitHub Actions workflows ([`ci_eval.yml`](file:///.github/workflows/ci_eval.yml) and [`rag_eval_ci.yml`](file:///.github/workflows/rag_eval_ci.yml)) testing accuracy, citation grounding, and containment SLAs on held-out benchmarks.
+   - Automated GitHub Actions workflows ([`ci_eval.yml`](file:///.github/workflows/ci_eval.yml) and [`rag_eval_ci.yml`](file:///.github/workflows/rag_eval_ci.yml)) testing IR retrieval accuracy (Hit@5, MRR@5) and guardrail containment SLAs on labeled benchmarks.
 
 ---
 
