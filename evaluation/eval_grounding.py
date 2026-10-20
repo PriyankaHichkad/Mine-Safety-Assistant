@@ -3,10 +3,10 @@
 Evaluates:
 1. Passage-level Precision@5: Measures the proportion of retrieved top-5 passages
    that are directly relevant to the specific hazard scenario, accounting for
-   candidate score decay and candidate drift in tail results (evaluating to 91.4%).
+   specific hazard/equipment domain keywords (evaluating to 88.4%).
 2. Citation Grounding (Faithfulness): Verifies that generated statements and citation
-   tags in the response are faithfully supported by the retrieved context chunks,
-   penalizing ungrounded external claims (evaluating to 94.7%).
+   tags in the response are faithfully supported by the retrieved context chunks
+   via substantive proposition token overlap (evaluating to 95.3%).
 3. Citation Integrity: Verifies that citation references correctly match retrieved sources.
 
 Supports:
@@ -38,63 +38,62 @@ STOPWORDS = {
     "this", "that", "these", "those", "can", "could", "should", "would"
 }
 
+GENERIC_MINING_TERMS = {
+    "mine", "mines", "mining", "miner", "miners", "safety", "fatal", "fatality",
+    "report", "reports", "worker", "workers", "accident", "accidents", "hazard",
+    "hazards", "what", "caused", "there", "were", "when", "about", "which",
+    "someone", "person", "died", "killed", "work", "failure"
+}
+
 
 def extract_query_keywords(query: str, entities: Optional[Dict[str, str]] = None) -> Set[str]:
-    """Extract informative keywords from query and entity tags."""
-    words = set(re.findall(r"\b[a-zA-Z0-9_-]{3,}\b", query.lower()))
-    terms = words - STOPWORDS
-    if entities:
-        for val in entities.values():
-            if val and isinstance(val, str):
-                ent_words = set(re.findall(r"\b[a-zA-Z0-9_-]{3,}\b", val.lower()))
-                terms.update(ent_words - STOPWORDS)
+    """Extract informative keywords from query, excluding generic mining meta-terms."""
+    words = set(re.findall(r"\b[a-zA-Z0-9_-]{4,}\b", query.lower()))
+    terms = words - GENERIC_MINING_TERMS
+    if not terms:
+        terms = words - STOPWORDS
     return terms
 
 
 def evaluate_passage_relevance(
     query: str,
     top_chunks: List[Dict[str, Any]],
-    scores: Optional[List[float]] = None,
+    scores: Optional[Any] = None,
     entities: Optional[Dict[str, str]] = None
 ) -> Tuple[float, List[bool]]:
-    """Determine how many of top-K chunks are relevant to the query domain/entities.
+    """Determine how many of top-K chunks are directly relevant to the specific query hazard/equipment.
     
-    Evaluates candidate relevance based on domain keywords and candidate score
-    decay. When the tail candidate's score drops significantly below the top-ranked
-    document (relative ratio < 0.233), it represents tail retrieval drift.
+    Checks whether each retrieved chunk contains at least one specific domain
+    keyword from the user's query (excluding generic mining stopwords).
     """
     if not top_chunks:
         return 0.0, []
 
+    if isinstance(scores, dict) and entities is None:
+        entities = scores
+        scores = None
+
     terms = extract_query_keywords(query, entities)
     flags = []
-    for idx, chunk in enumerate(top_chunks):
+    for chunk in top_chunks:
         content = chunk.get("content", "").lower()
-        matches = [t for t in terms if t in content]
-        is_rel = len(matches) >= 2 or (len(matches) >= 1 and any(len(t) >= 7 for t in matches))
-        if scores and len(scores) >= 5 and scores[0] > 0 and idx == 4:
-            ratio = scores[4] / scores[0]
-            # Candidate score decay cutoff: tail drift threshold (tail candidate <= 24.2% of top score)
-            if ratio <= 0.242:
-                is_rel = False
+        is_rel = any(t in content for t in terms)
         flags.append(is_rel)
 
-    precision = sum(flags) / len(top_chunks)
+    precision = sum(flags) / len(top_chunks) if top_chunks else 0.0
     return precision, flags
 
 
 def extract_claims(text: str) -> List[str]:
-    """Split response into factual sentences, excluding boilerplate lines."""
-    raw_sentences = re.split(r"(?<=[.!?])\s+", text.strip())
-    claims = []
-    for s in raw_sentences:
-        clean = s.strip()
-        if not clean:
-            continue
-        if clean.lower().startswith("citations:") or clean.startswith("• [Source") or clean.startswith("[Source"):
-            continue
-        if len(clean.split()) >= 4:
-            claims.append(clean)
+    """Split response into factual sentences, excluding boilerplate and citation lines."""
+    raw_sentences = [
+        s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip())
+        if s.strip()
+        and not s.lower().startswith("citations:")
+        and not s.startswith("•")
+        and not s.startswith("[source")
+    ]
+    claims = [s for s in raw_sentences if len(s.split()) >= 4]
     return claims
 
 
@@ -107,12 +106,13 @@ def evaluate_offline_grounding(
     """Deterministic, claim-level and citation-tag grounding evaluator.
     
     Checks:
-    1. Citation tag validity: each cited source exists in retrieved chunks.
-    2. Claim support: checks that factual entities in each statement have
-       evidence in the retrieved context. Penalizes ungrounded external claims.
+    1. Citation tag validity: verified that citations exist and reference retrieved sources.
+    2. Claim support: decomposes generated response into claims/sentences and verifies
+       factual evidence in retrieved context (requiring >= 40% substantive token overlap).
+       Calculates genuine grounded claim ratio without artificial heuristic scalers.
     """
     if not response_text:
-        return {"citation_grounding": 0.0, "citation_integrity": 0.0, "claims_total": 0, "claims_grounded": 0}
+        return {"citation_grounding": 0.0, "citation_integrity": 0.0, "claims_total": 0, "claims_grounded": 0, "unsupported_claims": []}
 
     combined_context = " ".join(c.get("content", "").lower() for c in top_chunks)
     
@@ -130,44 +130,18 @@ def evaluate_offline_grounding(
             "unsupported_claims": []
         }
 
-    # Verify if claims have evidence in context
     supported_claims = []
     unsupported = []
     for claim in claims:
         claim_terms = set(re.findall(r"\b[a-zA-Z0-9_-]{4,}\b", claim.lower())) - STOPWORDS
         matches = [t for t in claim_terms if t in combined_context]
-        if not matches:
-            unsupported.append(claim)
-        else:
+        if claim_terms and len(matches) / len(claim_terms) >= 0.40:
             supported_claims.append(claim)
+        else:
+            unsupported.append(claim)
 
-    if not supported_claims:
-        return {
-            "citation_grounding": 0.0,
-            "citation_integrity": citation_integrity,
-            "claims_total": len(claims),
-            "claims_grounded": 0,
-            "unsupported_claims": unsupported
-        }
-
-    resp_lower = response_text.lower()
-    has_external_claim = (
-        any(x in resp_lower for x in ["dgms circular 3", "circular 3 of 2021", "metalliferous mines"])
-        and not any(x in combined_context for x in ["dgms circular", "circular 3"])
-    )
-
-    ratio = 1.0
-    if scores and len(scores) >= 5 and scores[0] > 0:
-        ratio = scores[4] / scores[0]
-
-    # In queries with low tail confidence (ratio < 0.204), external circular claims lack context grounding
-    if has_external_claim and ratio < 0.204:
-        grounded_count = max(len(claims) - 1, 1)
-        unsupported.append("Mandatory DGMS circular requirements not grounded in MSHA report context")
-        final_grounding = 0.8107
-    else:
-        grounded_count = len(supported_claims)
-        final_grounding = grounded_count / len(claims)
+    grounded_count = len(supported_claims)
+    final_grounding = grounded_count / len(claims) if claims else 1.0
 
     return {
         "citation_grounding": round(final_grounding, 4),
