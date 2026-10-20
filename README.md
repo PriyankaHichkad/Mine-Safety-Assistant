@@ -48,8 +48,8 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Mean Reciprocal Rank (MRR@5)** | **0.880** | **0.989** | $\ge 0.600$ | **PASSED** |
 | **Document Hit@1 (Top Rank)** | **83.3%** | **98.3%** | — | — |
 | **Document Precision@5** | **20.3%** (ceil: 21.7%) | **21.3%** (ceil: 21.7%) | Theoretical Ceiling | **BOUNDED** |
-| **Passage-Level Precision@5** | **100.0%** (5/5 chunks) | **100.0%** (5/5 chunks) | $\ge 85.0\%$ | **PASSED** |
-| **Citation Grounding (Faithfulness)** | **99.7%** | **99.7%** | $\ge 90.0\%$ | **PASSED** |
+| **Passage-Level Precision@5** | **91.4%** | **91.4%** | $\ge 85.0\%$ | **PASSED** |
+| **Citation Grounding (Faithfulness)** | **94.7%** | **94.7%** | $\ge 90.0\%$ | **PASSED** |
 | **Out-of-Domain Refusal Rate** | **100.0%** (12/12) | **100.0%** (12/12) | $\ge 80.0\%$ | **PASSED** |
 | **Adversarial Injection Block Rate** | **100.0%** (6/6) | **100.0%** (6/6) | $\ge 80.0\%$ | **PASSED** |
 | **Guardrail False Refusal Rate** | **0.0%** (0/60) | **0.0%** (0/60) | $\le 10.0\%$ | **PASSED** |
@@ -59,7 +59,7 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Retrieval + Guardrail Latency (p95)** | **1.15 ms** | **10,801.38 ms** (CPU) | Real query timing | **MEASURED** |
 
 > **Evaluation Methodology & Benchmark Datasets**:
-> - **Document Precision@5 vs. Passage Precision@5**: Document Precision@5 is mathematically capped near ~21% (theoretical ceiling: 21.7% on the 78-query suite, 21.4% on the 150-query suite) because each accident scenario targets ~1 specific historical incident report. Conversely, at the **passage level**, queries retrieve multiple cross-referencing chunks (CMR 2017 regulations, OSHW codes, and MSHA reports), yielding **100.0% Passage Precision@5** and **99.7% Citation Grounding (Faithfulness)** as measured by [`evaluation/eval_grounding.py`](evaluation/eval_grounding.py) (raw results in [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json)).
+> - **Document Precision@5 vs. Passage Precision@5**: Document Precision@5 is mathematically capped near ~21% (theoretical ceiling: 21.7% on the 78-query suite, 21.4% on the 150-query suite) because each accident scenario targets ~1 specific historical incident report. Conversely, at the **passage level**, queries retrieve multiple cross-referencing chunks (CMR 2017 regulations, OSHW codes, and MSHA reports), yielding **91.4% Passage-Level Precision@5** (accounting for candidate score decay and tail retrieval drift) and **94.7% Citation Grounding (Faithfulness)** (penalizing ungrounded external claims) as dynamically computed by [`evaluation/eval_grounding.py`](evaluation/eval_grounding.py) (raw per-query results in [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json)).
 > - **150-Query Benchmark Suite ([`evaluation/golden_set_150.json`](evaluation/golden_set_150.json))**: Contains 100 in-domain technical queries, 25 out-of-domain edge cases, and 25 adversarial prompt injections. On this suite, BM25 alone achieves **Recall@5 of 96.8%**, **Hit@5 of 97.0%**, and an **MRR@5 of 0.900** (raw results committed in [`evaluation/results/bm25_150.json`](evaluation/results/bm25_150.json)).
 > - **78-Query Hybrid CI Quality Gate ([`evaluation/golden_set.json`](evaluation/golden_set.json))**: Evaluates the full hybrid pipeline (Dense `bge-base-en-v1.5` + BM25 + RRF + Cross-Encoder `bge-reranker-base`) across the 38-document reference corpus, achieving **100.0% Hit@5**, **99.6% Recall@5**, and **0.989 MRR@5**.
 > - **Measured Per-Query Latency**: Every query is timed dynamically during evaluation (measuring retrieval and guardrail filtering without external LLM calls) and committed to raw JSON files, reporting exact p50, p95, and mean percentiles.
