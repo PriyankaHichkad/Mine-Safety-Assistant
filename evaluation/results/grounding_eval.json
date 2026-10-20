@@ -3,11 +3,16 @@
   "mode_used": "offline",
   "retriever_used": "bm25",
   "passage_precision@5": 0.884,
-  "citation_grounding": 0.9533,
+  "citation_grounding": 0.9967,
   "citation_integrity": 1.0,
   "grounding_95_ci": [
-    0.7902,
-    0.9224
+    0.9901,
+    1.0
+  ],
+  "sla_compliance_rate": 0.99,
+  "sla_compliance_95_ci": [
+    0.9455,
+    0.9982
   ],
   "queries": [
     {
@@ -16,10 +21,10 @@
       "type": "cause",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.8,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 4
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q002",
@@ -49,10 +54,10 @@
       "type": "cause",
       "passage_precision@5": 0.4,
       "relevant_passages_in_top5": 2,
-      "citation_grounding": 0.0,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 0
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q005",
@@ -84,8 +89,8 @@
       "relevant_passages_in_top5": 5,
       "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 5
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q008",
@@ -95,8 +100,8 @@
       "relevant_passages_in_top5": 5,
       "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 5
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q009",
@@ -203,10 +208,10 @@
       "type": "cause",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.8,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 4
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q019",
@@ -214,10 +219,10 @@
       "type": "cause",
       "passage_precision@5": 0.8,
       "relevant_passages_in_top5": 4,
-      "citation_grounding": 0.8,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 4
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q020",
@@ -225,9 +230,9 @@
       "type": "cause",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.6,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
+      "claims_total": 3,
       "claims_grounded": 3
     },
     {
@@ -280,10 +285,10 @@
       "type": "cause",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.6667,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
       "claims_total": 3,
-      "claims_grounded": 2
+      "claims_grounded": 3
     },
     {
       "id": "q026",
@@ -348,8 +353,8 @@
       "relevant_passages_in_top5": 5,
       "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 5
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q032",
@@ -533,10 +538,10 @@
       "type": "control",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 1.0,
+      "citation_grounding": 0.6667,
       "citation_integrity": 1.0,
       "claims_total": 3,
-      "claims_grounded": 3
+      "claims_grounded": 2
     },
     {
       "id": "q049",
@@ -588,9 +593,9 @@
       "type": "topic",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.6,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
+      "claims_total": 3,
       "claims_grounded": 3
     },
     {
@@ -709,10 +714,10 @@
       "type": "cause",
       "passage_precision@5": 0.4,
       "relevant_passages_in_top5": 2,
-      "citation_grounding": 0.6667,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
       "claims_total": 3,
-      "claims_grounded": 2
+      "claims_grounded": 3
     },
     {
       "id": "q083",
@@ -755,8 +760,8 @@
       "relevant_passages_in_top5": 5,
       "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 5
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q087",
@@ -764,10 +769,10 @@
       "type": "cause",
       "passage_precision@5": 0.8,
       "relevant_passages_in_top5": 4,
-      "citation_grounding": 0.8,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 4
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q088",
@@ -852,9 +857,9 @@
       "type": "cause",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.6,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
+      "claims_total": 3,
       "claims_grounded": 3
     },
     {
@@ -885,9 +890,9 @@
       "type": "cause",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.6,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
+      "claims_total": 3,
       "claims_grounded": 3
     },
     {
@@ -1008,8 +1013,8 @@
       "relevant_passages_in_top5": 5,
       "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 5
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q110",
@@ -1039,9 +1044,9 @@
       "type": "control",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.6,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
+      "claims_total": 3,
       "claims_grounded": 3
     },
     {
@@ -1083,10 +1088,10 @@
       "type": "regulation",
       "passage_precision@5": 1.0,
       "relevant_passages_in_top5": 5,
-      "citation_grounding": 0.8,
+      "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 4
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q117",
@@ -1096,8 +1101,8 @@
       "relevant_passages_in_top5": 5,
       "citation_grounding": 1.0,
       "citation_integrity": 1.0,
-      "claims_total": 5,
-      "claims_grounded": 5
+      "claims_total": 3,
+      "claims_grounded": 3
     },
     {
       "id": "q118",

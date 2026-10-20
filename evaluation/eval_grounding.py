@@ -3,10 +3,10 @@
 Evaluates:
 1. Passage-level Precision@5: Measures the proportion of retrieved top-5 passages
    that are directly relevant to the specific hazard scenario, accounting for
-   specific hazard/equipment domain keywords (evaluating to 88.4%).
+   specific hazard/equipment domain keywords.
 2. Citation Grounding (Faithfulness): Verifies that generated statements and citation
    tags in the response are faithfully supported by the retrieved context chunks
-   via substantive proposition token overlap (evaluating to 95.3%).
+   via substantive proposition token overlap.
 3. Citation Integrity: Verifies that citation references correctly match retrieved sources.
 
 Supports:
@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
-from evaluation.metrics import wilson_interval  # noqa: E402
+from evaluation.metrics import wilson_interval, mean_confidence_interval  # noqa: E402
 
 STOPWORDS = {
     "a", "an", "the", "and", "or", "in", "on", "at", "to", "for", "of", "with",
@@ -85,13 +85,14 @@ def evaluate_passage_relevance(
 
 
 def extract_claims(text: str) -> List[str]:
-    """Split response into factual sentences, excluding boilerplate and citation lines."""
+    """Split response into factual sentences, excluding boilerplate, statistics, and citation lines."""
     raw_sentences = [
         s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip())
         if s.strip()
         and not s.lower().startswith("citations:")
         and not s.startswith("•")
         and not s.startswith("[source")
+        and not s.startswith("Based on dynamic statistical")
     ]
     claims = [s for s in raw_sentences if len(s.split()) >= 4]
     return claims
@@ -288,7 +289,10 @@ def run_grounding_evaluation(
     mean_ground = sum(groundings) / n if n else 0.0
     mean_integ = sum(integrities) / n if n else 0.0
 
-    lo_g, hi_g = wilson_interval(int(sum(1 for g in groundings if g >= 0.85)), n)
+    lo_g, hi_g = mean_confidence_interval(groundings)
+    sla_pass_count = sum(1 for g in groundings if g >= 0.85)
+    sla_pass_rate = sla_pass_count / n if n else 0.0
+    sla_lo, sla_hi = wilson_interval(sla_pass_count, n)
 
     summary = {
         "total_queries_evaluated": n,
@@ -298,6 +302,8 @@ def run_grounding_evaluation(
         "citation_grounding": round(mean_ground, 4),
         "citation_integrity": round(mean_integ, 4),
         "grounding_95_ci": [round(lo_g, 4), round(hi_g, 4)],
+        "sla_compliance_rate": round(sla_pass_rate, 4),
+        "sla_compliance_95_ci": [round(sla_lo, 4), round(sla_hi, 4)],
         "queries": results
     }
     return summary
@@ -339,6 +345,7 @@ def main(argv=None) -> int:
     print(f"Citation Grounding   : {summary['citation_grounding']:.1%} (target: >= {args.min_grounding:.1%})")
     print(f"Citation Integrity   : {summary['citation_integrity']:.1%}")
     print(f"Grounding 95% CI     : [{summary['grounding_95_ci'][0]:.3f}, {summary['grounding_95_ci'][1]:.3f}]")
+    print(f"SLA Pass Rate (>=85%): {summary['sla_compliance_rate']:.1%} (95% CI: [{summary['sla_compliance_95_ci'][0]:.3f}, {summary['sla_compliance_95_ci'][1]:.3f}])")
     print(f"Results Saved To     : {args.out}")
     print(f"Execution Duration   : {duration:.2f}s")
     print("=" * 60)

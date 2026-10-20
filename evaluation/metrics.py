@@ -55,3 +55,16 @@ def wilson_interval(successes: int, n: int, z: float = 1.96) -> Tuple[float, flo
     centre = (p + z * z / (2 * n)) / denom
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
     return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def mean_confidence_interval(values: Sequence[float], z: float = 1.96) -> Tuple[float, float]:
+    """95% confidence interval for a continuous sample mean."""
+    n = len(values)
+    if n == 0:
+        return (0.0, 0.0)
+    if n == 1:
+        return (values[0], values[0])
+    mean = sum(values) / n
+    variance = sum((x - mean) ** 2 for x in values) / (n - 1)
+    se = math.sqrt(variance / n)
+    return (max(0.0, mean - z * se), min(1.0, mean + z * se))

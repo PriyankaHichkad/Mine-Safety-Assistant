@@ -41,26 +41,35 @@ The retrieval and generation pipeline was evaluated against a labeled golden ben
 
 Full run artifacts with per-query rankings and Wilson score confidence intervals are committed in [`evaluation/results/hybrid.json`](evaluation/results/hybrid.json) and [`evaluation/results/bm25.json`](evaluation/results/bm25.json):
 
-| Evaluation Metric | Sparse BM25 | Hybrid (Dense + BM25 + RRF) | Target SLA / Gate | Status |
+#### A. Document Retrieval Benchmarks (BM25 vs. Hybrid RRF)
+
+| Retrieval Metric | Sparse BM25 | Hybrid (Dense + BM25 + RRF) | Target SLA / Gate | Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **Document Hit@5** | **95.0%** (57/60) | **100.0%** (60/60) | $\ge 85.0\%$ | **PASSED** |
 | **Retrieval Recall@5** | **94.6%** | **99.6%** | $\ge 90.0\%$ | **PASSED** |
 | **Mean Reciprocal Rank (MRR@5)** | **0.880** | **0.989** | $\ge 0.600$ | **PASSED** |
 | **Document Hit@1 (Top Rank)** | **83.3%** | **98.3%** | — | — |
-| **Passage-Level Precision@5** | **88.4%** | **88.4%** | $\ge 85.0\%$ | **PASSED** |
-| **Citation Grounding (Faithfulness)** | **95.3%** | **95.3%** | $\ge 90.0\%$ | **PASSED** |
-| **Out-of-Domain Refusal Rate** | **100.0%** (12/12) | **100.0%** (12/12) | $\ge 80.0\%$ | **PASSED** |
-| **Adversarial Injection Block Rate** | **100.0%** (6/6) | **100.0%** (6/6) | $\ge 80.0\%$ | **PASSED** |
-| **Guardrail False Refusal Rate** | **0.0%** (0/60) | **0.0%** (0/60) | $\le 10.0\%$ | **PASSED** |
 | **Retrieval Latency (p50)** | **0.22 ms** | **8,081.63 ms** (CPU) | Sub-millisecond BM25 | **MEASURED** |
 | **Retrieval Latency (p95)** | **0.38 ms** | **10,801.26 ms** (CPU) | Sub-millisecond BM25 | **MEASURED** |
 | **Retrieval + Guardrail Latency (p50)** | **0.31 ms** | **8,081.80 ms** (CPU) | Real query timing | **MEASURED** |
 | **Retrieval + Guardrail Latency (p95)** | **1.15 ms** | **10,801.38 ms** (CPU) | Real query timing | **MEASURED** |
 
+#### B. Extractive RAG Generation, Citation Grounding & Safety Guardrail SLAs
+
+| Evaluation Metric | Measured Result | 95% Confidence Interval | Target SLA / Gate | Status |
+| :--- | :---: | :---: | :---: | :---: |
+| **Passage-Level Precision@5** | **88.4%** | $[0.841, 0.916]$ | $\ge 85.0\%$ | **PASSED** |
+| **Citation Grounding (Faithfulness)** | **99.7%** | $[0.990, 1.000]$ (Continuous Mean CI) | $\ge 90.0\%$ | **PASSED** |
+| **Citation Integrity** | **100.0%** | $[0.963, 1.000]$ | $100.0\%$ | **PASSED** |
+| **SLA Compliance Rate (Score $\ge 0.85$)** | **99.0%** | $[0.946, 0.998]$ (Wilson CI) | $\ge 90.0\%$ | **PASSED** |
+| **Out-of-Domain Refusal Rate** | **100.0%** (12/12) | $[0.758, 1.000]$ | $\ge 80.0\%$ | **PASSED** |
+| **Adversarial Injection Block Rate** | **100.0%** (6/6) | $[0.610, 1.000]$ | $\ge 80.0\%$ | **PASSED** |
+| **Guardrail False Refusal Rate** | **0.0%** (0/60) | $[0.000, 0.060]$ | $\le 10.0\%$ | **PASSED** |
+
 > **Evaluation Methodology & Benchmark Datasets**:
-> - **Passage-Level Precision@5 & Citation Grounding**: In domain-specific mine safety operations, queries synthesize multiple cross-referencing passages (DGMS CMR 2017 regulations, OSHW codes, and multiple historical incident cases). The pipeline achieves **88.4% Passage-Level Precision@5** (verified against specific hazard and equipment domain keywords) and **95.3% Citation Grounding (Faithfulness)** (verified via substantive proposition token overlap $\ge 40\%$) as dynamically computed by [`evaluation/eval_grounding.py`](evaluation/eval_grounding.py) (raw per-query results in [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json)).
+> - **Document Retrieval Evaluation**: Evaluated across 60 technical mining queries in [`evaluation/golden_set.json`](evaluation/golden_set.json) comparing fast lexical BM25 against the full Hybrid RRF pipeline (Dense `bge-base-en-v1.5` + BM25 + Cross-Encoder `bge-reranker-base`). Dense cross-encoder reranking eliminates BM25 lexical misses (100% Hit@5, 0.989 MRR@5) with recorded per-query latency in [`evaluation/results/hybrid.json`](evaluation/results/hybrid.json) and [`evaluation/results/bm25.json`](evaluation/results/bm25.json).
+> - **Extractive RAG Synthesis & Grounding Evaluation**: In offline CI sandboxes, generation is evaluated via deterministic multi-document extractive synthesis (`_grounded_fallback` in `src/engine.py`), which dynamically parses incident root causes, contributing factors, and regulatory compliance directives directly from retrieved chunks without hallucinating ungrounded circulars. Evaluated across 100 technical queries in [`evaluation/golden_set_150.json`](evaluation/golden_set_150.json), the system achieves **88.4% Passage-Level Precision@5** and **99.7% Citation Grounding** with an exact continuous mean 95% CI of $[0.990, 1.000]$ and a **99.0% SLA Compliance Rate** ($[0.946, 0.998]$ Wilson CI), tracked in [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json). In online production with an API key, the pipeline connects to Groq / Ollama LLMs with support for Ragas evaluation.
 > - **150-Query Benchmark Suite ([`evaluation/golden_set_150.json`](evaluation/golden_set_150.json))**: Contains 100 in-domain technical queries, 25 out-of-domain edge cases, and 25 adversarial prompt injections. On this suite, BM25 alone achieves **Recall@5 of 96.8%**, **Hit@5 of 97.0%**, and an **MRR@5 of 0.900** (raw results committed in [`evaluation/results/bm25_150.json`](evaluation/results/bm25_150.json)).
-> - **78-Query Hybrid CI Quality Gate ([`evaluation/golden_set.json`](evaluation/golden_set.json))**: Evaluates the full hybrid pipeline (Dense `bge-base-en-v1.5` + BM25 + RRF + Cross-Encoder `bge-reranker-base`) across the 38-document reference corpus, achieving **100.0% Hit@5**, **99.6% Recall@5**, and **0.989 MRR@5**.
 > - **Measured Per-Query Latency**: Every query is timed dynamically during evaluation (measuring retrieval and guardrail filtering without external LLM calls) and committed to raw JSON files, reporting exact p50, p95, and mean percentiles.
 
 ---

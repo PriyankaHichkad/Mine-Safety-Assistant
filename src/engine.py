@@ -468,25 +468,95 @@ class MineMindRAGEngine:
         }
 
     def _grounded_fallback(self, query: str, retrieved: List[Dict[str, Any]], risk: Dict[str, Any]) -> str:
-        citation = retrieved[0]["chunk"]["metadata"].get("doc_title", "Reference") if retrieved else "Mining Safety Report"
-        q = query.lower()
-        p_acc, p_fat, n_tot, n_haz, f_haz = risk["prob_accident_occurrence"], risk["prob_fatality_given_accident"], risk["total_reports"], risk["hazard_matches"], risk["fatal_matches"]
+        """Deterministic extractive RAG synthesis used when external LLM API is unavailable.
+        
+        Synthesizes answers strictly from retrieved passage content and empirical risk stats,
+        preventing ungrounded external claims or hallucinated regulatory citations.
+        """
+        if not retrieved:
+            return (
+                f"No specific incident reports or regulations were retrieved for the query '{query}'. "
+                "Please verify the scenario details or consult the official DGMS / MSHA safety manual.\n\n"
+                "Citations:\n• [Source: None]"
+            )
 
-        if any(w in q for w in ["dumper", "edge", "tipping"]):
-            return (
-                f"Analysis of historical surface mining investigation reports indicates that opencast dumper edge overturns at tipping benches are primarily caused by un-bermed bench edges, soft uncompacted soil giving way under rear axle loads, and drivers reversing blindly without spotter guidance. Based on statistical analysis of the dataset ({n_tot} total incident reports), edge dumper accidents account for {n_haz} cases, yielding an Accident Occurrence Probability of {p_acc}% ({n_haz}/{n_tot}). Among these edge dumper accident cases, {f_haz} resulted in fatal outcomes, establishing a Fatality Probability of {p_fat}% ({f_haz}/{n_haz}).\n\n"
-                f"To prevent edge dumper overturns, DGMS Circular 3 of 2021 and MSHA surface safety rules mandate that waste dump tipping edges must feature continuous earthen berms or parapet walls whose height is at least equal to the tyre radius of the largest dumper (minimum 1.5 meters). In addition, main haul road gradients must strictly not exceed 1 in 16 (6.25%), pre-shift retarder brake inspections must be logged, and trained spotters equipped with visual communication signals must guide reversing trucks at all active tipping locations.\n\n"
-                f"Citations:\n• [Source: {citation}]"
-            )
-        elif any(w in q for w in ["fire", "heating", "spontaneous", "combustion"]):
-            return (
-                f"Historical accident reports from MSHA and DGMS reveal that underground mine fires and spontaneous combustion are triggered by air leakage through crushed coal pillars in unsealed goaf areas, frictional ignition on rubber conveyor belts slipping against drive rollers, or oil leaks onto hot diesel exhaust manifolds. Across the analyzed corpus of {n_tot} reports, mine fire hazards account for {n_haz} incident cases, establishing an Accident Occurrence Probability of {p_acc}% ({n_haz}/{n_tot}). Among these fire incidents, {f_haz} cases resulted in fatal outcomes due to carbon monoxide poisoning (CO > 50 ppm) and oxygen deficiency, representing a high Fatality Probability of {p_fat}% ({f_haz}/{n_haz}).\n\n"
-                f"To eliminate fire hazards, mandatory safety rules under CMR 2017 Regulation 143 and MSHA standards require continuous telemetry monitoring of carbon monoxide (alarm threshold at 10 ppm), construction of explosion-proof nitrogen-flushed isolation stoppings, and installation of Fire-Resistant Anti-Static (FRAS) conveyor belts equipped with thermal trip switches and automatic water deluge sprays. Mining operations must enforce pre-shift thermal imaging scans of high-risk goaf edges and require all underground personnel to participate in quarterly SCSR respirator donning drills.\n\n"
-                f"Citations:\n• [Source: {citation}]"
-            )
-        else:
-            return (
-                f"Historical mining investigation reports in {citation} demonstrate that operational hazards stem from inadequate pre-shift risk assessment, missing physical machinery guards, or un-inspected equipment. Statistical evaluation across {n_tot} total reports indicates a hazard Occurrence Probability of {p_acc}% ({n_haz}/{n_tot}) and a Fatality Probability of {p_fat}% ({f_haz}/{n_haz}).\n\n"
-                f"Full regulatory compliance under Coal Mines Regulations (CMR 2017), Metalliferous Mines Regulations (OMR 2017), Mines Act 1952, MSHA standards, and OSHA codes requires mandatory pre-shift task hazard inspections, engineering guards, and continuous sensor monitoring.\n\n"
-                f"Citations:\n• [Source: {citation}]"
-            )
+        top_chunk = retrieved[0]["chunk"]
+        top_content = top_chunk.get("content", "")
+
+        p_acc = risk.get("prob_accident_occurrence", 0.0)
+        p_fat = risk.get("prob_fatality_given_accident", 0.0)
+        n_tot = risk.get("total_reports", 0)
+        n_haz = risk.get("hazard_matches", 0)
+        f_haz = risk.get("fatal_matches", 0)
+
+        # 1. Extract incident causes present in retrieved context
+        causes = []
+        if "Primary Root Causes Identified:" in top_content:
+            sec1 = top_content.split("Primary Root Causes Identified:")[1].split("---")[0]
+            items = re.findall(r"(?:^|\s)\d+\.\s*(.+?)(?=(?:\s\d+\.|\s*---|SECTION|\Z))", sec1)
+            for item_text in items:
+                clean = item_text.strip().rstrip(".")
+                if clean and len(clean) > 8 and clean not in causes:
+                    causes.append(clean)
+        elif "Incident Overview:" in top_content:
+            m = re.search(r"Incident Overview:\s*([^-\n]+)", top_content)
+            if m:
+                causes.append(m.group(1).strip())
+
+        if not causes:
+            sentences = [
+                s.strip() for s in re.split(r"(?<=[.!?])\s+", top_content)
+                if len(s.split()) >= 5 and not s.startswith("DOCUMENT") and not s.startswith("---")
+            ]
+            causes = [sentences[0]] if sentences else ["inadequate operational hazard assessment"]
+
+        # 2. Extract mandatory compliance directives present in retrieved context
+        directives = []
+        for item in retrieved[:3]:
+            c_text = item["chunk"].get("content", "")
+            if "Mandatory Compliance Directives:" in c_text:
+                sec2 = c_text.split("Mandatory Compliance Directives:")[1]
+                if "SECTION 3" in sec2:
+                    sec2 = sec2.split("SECTION 3")[0]
+                elif "---" in sec2:
+                    sec2 = sec2.split("---")[0]
+                items = re.findall(r"-\s*([^-\n]+?)(?=\s+-\s+|\s*---|SECTION|\Z)", sec2)
+                for d in items:
+                    clean = d.strip().rstrip(".")
+                    if clean and len(clean) > 8 and clean not in directives:
+                        directives.append(clean)
+
+        if not directives:
+            for item in retrieved[:3]:
+                c_text = item["chunk"].get("content", "")
+                if "Required Action Plan:" in c_text:
+                    sec3 = c_text.split("Required Action Plan:")[1]
+                    items = re.findall(r"-\s*([^-\n]+?)(?=\s+-\s+|\s*---|SECTION|\Z)", sec3)
+                    for d in items:
+                        clean = d.strip().rstrip(".")
+                        if clean and len(clean) > 8 and clean not in directives:
+                            directives.append(clean)
+
+        if not directives:
+            directives = ["Enforce pre-shift equipment safety inspections, continuous atmospheric hazard monitoring, and strict compliance with mining regulations"]
+
+        cause_summary = causes[0]
+        additional_causes = f" Contributing factors included: {'; '.join(causes[1:3])}." if len(causes) > 1 else ""
+        p1 = (
+            f"Analysis of retrieved investigation reports indicates that historical incidents were primarily caused by {cause_summary}.{additional_causes} "
+            f"Based on dynamic statistical risk analysis across {n_tot} reports in the corpus, matching hazard cases account for {n_haz} incidents, "
+            f"yielding an Accident Occurrence Probability of {p_acc}% ({n_haz}/{n_tot}) and an empirical Fatality Probability of {p_fat}% ({f_haz}/{n_haz})."
+        )
+
+        dirs_summary = "; ".join(directives[:3])
+        p2 = f"To eliminate recurrence, mandatory safety directives extracted from the retrieved records require: {dirs_summary}."
+
+        cites = []
+        for item in retrieved[:3]:
+            doc_t = item["chunk"].get("metadata", {}).get("doc_title", "Safety Report")
+            tag = f"• [Source: {doc_t}]"
+            if tag not in cites:
+                cites.append(tag)
+        cites_block = "\n".join(cites)
+
+        return f"{p1}\n\n{p2}\n\nCitations:\n{cites_block}"

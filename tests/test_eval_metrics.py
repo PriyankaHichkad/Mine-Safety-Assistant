@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from evaluation.metrics import (
     dedupe, hit_at_k, recall_at_k, precision_at_k, precision_ceiling,
-    reciprocal_rank, wilson_interval,
+    reciprocal_rank, wilson_interval, mean_confidence_interval,
 )
 
 
@@ -45,3 +45,13 @@ def test_wilson_interval_bounds():
     assert wilson_interval(0, 0) == (0.0, 0.0)
     lo, hi = wilson_interval(10, 10)
     assert hi == pytest.approx(1.0) and lo < 1.0
+
+
+def test_mean_confidence_interval():
+    vals = [0.95, 0.96, 0.94, 0.98, 0.97]
+    mean = sum(vals) / len(vals)
+    lo, hi = mean_confidence_interval(vals)
+    assert lo <= mean <= hi
+    assert 0.0 <= lo and hi <= 1.0
+    assert mean_confidence_interval([]) == (0.0, 0.0)
+    assert mean_confidence_interval([0.8]) == (0.8, 0.8)
