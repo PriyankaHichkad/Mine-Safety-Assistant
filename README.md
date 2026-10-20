@@ -121,12 +121,13 @@ On the 60 in-domain evaluation queries, sparse BM25 encountered **3 retrieval mi
 > *"What causes shuttle car crush injuries during underground pillar extraction?"*
 
 #### **Generated Output**:
-> Analysis of historical underground mining investigation reports indicates that shuttle car crush injuries during pillar extraction are primarily caused by severe operator blind spots, inadequate rib side clearance (less than 1.0 meter), unexpected vehicle reversal, and miners stepping into pinch points between moving shuttle cars and coal pillars. Based on statistical analysis of the dataset (1,324 total incident reports), powered haulage accidents account for 145 cases, yielding an Accident Occurrence Probability of 10.95% (145/1324). Among these haulage cases, 94 resulted in fatal outcomes, establishing a Fatality Probability of 64.83% (94/145).
+> Analysis of historical underground mining investigation reports indicates that shuttle car crush injuries during pillar extraction are primarily caused by severe operator blind spots, inadequate rib side clearance (less than 1.0 meter), unexpected vehicle reversal, and miners stepping into pinch points between moving shuttle cars and coal pillars. Based on statistical analysis of the dataset (1,324 total incident reports), powered haulage accidents account for 889 cases, yielding an Accident Occurrence Probability of 67.15% (889/1324). Among these haulage cases, 887 resulted in fatal outcomes, establishing an empirical Fatality Probability of 99.78% (887/889).
 >
 > To eliminate shuttle car crush hazards, mandatory safety rules under MSHA 30 CFR and DGMS Coal Mines Regulations (CMR 2017 Regulation 111) require active electromagnetic Proximity Detection Systems (PDS) installed on all shuttle cars to automatically trip traction power when a miner enters a red-zone hazard area. In addition, mine operators must enforce a minimum 1.0-meter rib side clearance along haulage roadways, log pre-shift steering and retarder brake inspections, and mandate high-reflectivity PPE for all underground personnel.
 >
 > Citations:  
-> • [Source: MSHA Fatality Investigation Report MSHA-FAT-2023-01, Author: Safety Board, Section 1]
+> • [Source: MSHA & DGMS Official Fatality Investigation Report MSHA-FAT-HAUL-01, Author: Mine Safety and Health Administration (MSHA) & DGMS Official Incident Investigation, Page 1]  
+> • [Source: MSHA Fatality Investigation Report Msha-Fat-2023-01, Author: Mining Safety Board, Section 1]
 
 ---
 

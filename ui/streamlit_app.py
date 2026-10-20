@@ -242,10 +242,11 @@ with tabs[2]:
     with col_a:
         st.markdown("""
         ### MSHA & DGMS Safety Codes
-        - **MSHA-FAT-2023-01**: Shuttle Car Crush Accidents & Proximity Detection Systems (PDS).
-        - **MSHA-FAT-2023-02**: Underground Roof Falls, RMR Support Plans & Resin Bolting.
-        - **MSHA-FAT-2024-01**: Opencast Dumper Overturns & Parapet Wall / Berm Heights.
-        - **MSHA-FAT-2023-05**: 6.6kV Electric Shovel Trailing Cable Ground Continuity.
+        - **MSHA-FAT-HAUL-01**: Shuttle Car Crush Accidents & Proximity Detection Systems (PDS).
+        - **MSHA-FAT-ROOF-01**: Underground Roof Falls, RMR Support Plans & Resin Bolting.
+        - **MSHA-FAT-DUMP-01**: Opencast Dumper Overturns & Parapet Wall / Berm Heights.
+        - **MSHA-FAT-ELEC-01**: 6.6kV Electric Shovel Trailing Cable Ground Continuity.
+        - **1,324 Historical Reports**: Complete MSHA investigation report corpus (1995–2026) versioned with DVC.
         """)
     with col_b:
         st.markdown("""

@@ -298,16 +298,26 @@ class MineSafetyRiskAnalyzer:
 
     def calculate_hazard_risk(self, query: str) -> Dict[str, Any]:
         q_lower = query.lower()
-        if any(w in q_lower for w in ["dumper", "edge", "tipping", "dump"]):
-            keywords, category = ["dumper", "dump", "tipping", "berm", "parapet", "haul road", "edge"], "Surface Dumper & Bench Edge Hazards"
-        elif any(w in q_lower for w in ["fire", "heating", "spontaneous", "combustion"]):
-            keywords, category = ["fire", "spontaneous", "heating", "combustion", "flame"], "Mine Fire & Spontaneous Combustion Hazards"
-        elif any(w in q_lower for w in ["roof", "fall", "strata", "pillar"]):
-            keywords, category = ["roof", "fall", "strata", "pillar", "collapse"], "Underground Roof Fall & Strata Collapse Hazards"
-        elif any(w in q_lower for w in ["shuttle", "haulage", "crush", "conveyor"]):
-            keywords, category = ["shuttle", "haulage", "conveyor", "crush"], "Powered Haulage & Conveyor Hazards"
-        elif any(w in q_lower for w in ["electric", "shock", "cable"]):
-            keywords, category = ["electric", "shock", "cable", "ground"], "Electrical Trailing Cable & Shock Hazards"
+        categories = [
+            ("Powered Haulage & Conveyor Hazards", ["shuttle", "haulage", "conveyor", "crush"]),
+            ("Surface Dumper & Bench Edge Hazards", ["dumper", "dump", "tipping", "berm", "parapet", "haul road", "edge"]),
+            ("Mine Fire & Spontaneous Combustion Hazards", ["fire", "spontaneous", "heating", "combustion", "flame"]),
+            ("Underground Roof Fall & Strata Collapse Hazards", ["roof", "fall", "strata", "pillar", "collapse"]),
+            ("Electrical Trailing Cable & Shock Hazards", ["electric", "shock", "cable", "ground"]),
+        ]
+
+        best_cat = None
+        best_kws = None
+        max_score = 0
+        for cat_name, kws in categories:
+            score = sum(1 for kw in kws if kw in q_lower)
+            if score > max_score:
+                max_score = score
+                best_cat = cat_name
+                best_kws = kws
+
+        if max_score > 0:
+            category, keywords = best_cat, best_kws
         else:
             keywords, category = [w for w in q_lower.split() if len(w) > 3], f"Hazard Query: '{query}'"
 
