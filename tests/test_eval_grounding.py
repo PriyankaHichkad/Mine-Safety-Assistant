@@ -46,6 +46,17 @@ def test_extract_claims():
     assert not any("Citations:" in c for c in claims)
 
 
+def test_extract_claims_includes_statistics():
+    text = (
+        "Based on dynamic statistical hazard analysis across 38 incident reports, "
+        "the calculated accident occurrence probability is 13.16% with a fatality probability of 60.0%.\n\n"
+        "Citations:\n• [Source 1: MSHA Surface Rules]"
+    )
+    claims = extract_claims(text)
+    assert len(claims) == 1
+    assert "13.16%" in claims[0]
+
+
 def test_evaluate_offline_grounding_supported():
     context_chunks = [
         {"content": "CMR 2017 Regulation 143 requires continuous telemetry monitoring of carbon monoxide in underground coal mines."}

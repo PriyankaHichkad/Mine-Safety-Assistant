@@ -286,6 +286,15 @@ class MineSafetyRiskAnalyzer:
     """Calculates empirical hazard prevalence & fatality distribution over ingested incident report corpus."""
     def __init__(self, reports_dir: str = "./data/msha_reports"):
         self.reports_dir = reports_dir
+        self._cached_texts = []
+        if os.path.exists(self.reports_dir):
+            files = [f for f in os.listdir(self.reports_dir) if f.endswith(".txt")]
+            for fname in files:
+                try:
+                    with open(os.path.join(self.reports_dir, fname), "r", encoding="utf-8", errors="ignore") as f:
+                        self._cached_texts.append(f.read().lower())
+                except Exception:
+                    pass
 
     def calculate_hazard_risk(self, query: str) -> Dict[str, Any]:
         q_lower = query.lower()
@@ -302,20 +311,12 @@ class MineSafetyRiskAnalyzer:
         else:
             keywords, category = [w for w in q_lower.split() if len(w) > 3], f"Hazard Query: '{query}'"
 
-        total_reports, hazard_matches, fatal_matches = 0, 0, 0
-        if os.path.exists(self.reports_dir):
-            files = [f for f in os.listdir(self.reports_dir) if f.endswith(".txt")]
-            total_reports = len(files)
-            for fname in files:
-                try:
-                    with open(os.path.join(self.reports_dir, fname), "r", encoding="utf-8", errors="ignore") as f:
-                        text = f.read().lower()
-                    if any(kw in text for kw in keywords):
-                        hazard_matches += 1
-                        if any(w in text for w in ["fatal", "fatality", "death", "died", "killed"]):
-                            fatal_matches += 1
-                except Exception:
-                    pass
+        total_reports, hazard_matches, fatal_matches = len(self._cached_texts), 0, 0
+        for text in self._cached_texts:
+            if any(kw in text for kw in keywords):
+                hazard_matches += 1
+                if any(w in text for w in ["fatal", "fatality", "death", "died", "killed"]):
+                    fatal_matches += 1
 
         if total_reports == 0 or hazard_matches == 0:
             return {
@@ -349,6 +350,8 @@ class OllamaLLMProvider:
         self.timeout = 2
         self.api_key = os.getenv("GROQ_API_KEY", "")
         self.groq_client = None
+        self.last_model_used = None
+        self.last_error = None
         if self.api_key:
             try:
                 import groq
@@ -357,6 +360,8 @@ class OllamaLLMProvider:
                 pass
 
     def generate_response(self, system_prompt: str, user_prompt: str, model_name: Optional[str] = None) -> str:
+        self.last_model_used = None
+        self.last_error = None
         if self.groq_client:
             chosen = model_name or self.model or "qwen/qwen3.8-27b"
             candidate_models = [chosen, "qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
@@ -370,8 +375,10 @@ class OllamaLLMProvider:
                         temperature=0.2,
                         max_tokens=800
                     )
+                    self.last_model_used = m
                     return chat.choices[0].message.content.strip()
-                except Exception:
+                except Exception as e:
+                    self.last_error = str(e)
                     continue
         return ""
 
@@ -427,6 +434,7 @@ class MineMindRAGEngine:
         ret_ms = (time.time() - start_ret) * 1000
 
         filtered = [item for item in retrieved if item.get("rerank_score", -5.0) >= self.min_relevance_threshold or len(retrieved) > 0] or retrieved[:3]
+        filtered = filtered[:3]
 
         context_blocks, citations = [], []
         for idx, item in enumerate(filtered, 1):
@@ -453,10 +461,16 @@ class MineMindRAGEngine:
         )
 
         start_gen = time.time()
-        generated_text = self.ollama.generate_response("You are MineSafety-AI.", formatted_prompt, model_name=model_override)
-
-        if not generated_text:
+        if model_override == "extractive":
             generated_text = self._grounded_fallback(query, filtered, risk)
+            model_used = "extractive_fallback"
+        else:
+            generated_text = self.ollama.generate_response("You are MineSafety-AI.", formatted_prompt, model_name=model_override)
+            if generated_text:
+                model_used = self.ollama.last_model_used or "groq_api"
+            else:
+                generated_text = self._grounded_fallback(query, filtered, risk)
+                model_used = "extractive_fallback"
 
         gen_ms = (time.time() - start_gen) * 1000
         total_ms = (time.time() - start_total) * 1000
@@ -466,12 +480,13 @@ class MineMindRAGEngine:
             "answer": generated_text,
             "citations": citations,
             "entities": entities,
+            "model_used": model_used,
             "telemetry": {
                 "total_latency_ms": round(total_ms, 2),
                 "retrieval_latency_ms": round(ret_ms, 2),
                 "generation_latency_ms": round(gen_ms, 2),
                 "num_contexts_used": len(filtered),
-                "llm_used": "Groq / Ollama / Grounded Fallback"
+                "llm_used": model_used
             }
         }
 

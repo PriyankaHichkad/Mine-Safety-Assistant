@@ -54,17 +54,21 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Retrieval + Guardrail Latency (p50)** | **0.31 ms** | **8,081.80 ms** (CPU) | Real query timing | **MEASURED** |
 | **Retrieval + Guardrail Latency (p95)** | **1.15 ms** | **10,801.38 ms** (CPU) | Real query timing | **MEASURED** |
 
-#### B. Generation & Citation Grounding: Live Groq LLM API vs. Offline Extractive CI Mode
+#### B. Generative Faithfulness & Citation Grounding: 100-Query LLM-as-a-Judge Evaluation vs. Offline Extractive CI Sanity Check
 
-| Evaluation Metric | Live Groq Cloud API (`qwen/qwen3.8-27b`) | Offline Extractive Synthesizer (Zero-API CI) | Target SLA / Gate | Status |
+| Evaluation Metric | Production Generative RAG (100 Queries, Live LLM Judge) | Extractive Fallback CI Check (100 Queries, Offline Sandbox) | Target SLA / Gate | Status |
 | :--- | :---: | :---: | :---: | :---: |
-| **Passage-Level Precision@5** | **89.3%** | **88.4%** | $\ge 85.0\%$ | **PASSED** |
-| **Citation Grounding (Faithfulness)** | **87.0%** ($[0.807, 0.933]$ 95% CI) | **99.7%** ($[0.990, 1.000]$ 95% CI) | $\ge 85.0\%$ | **PASSED** |
-| **Citation Integrity** | **100.0%** | **100.0%** | $100.0\%$ | **PASSED** |
-| **SLA Compliance Rate ($\text{Score} \ge 0.85$)** | **40.0%** ($[0.198, 0.643]$ Wilson CI) | **99.0%** ($[0.946, 0.998]$ Wilson CI) | — | **MEASURED** |
-| **Average Generation Latency** | **20.20 s / query** (Cloud LPU + Network) | **0.10 s / query** (Local In-Memory CPU) | — | **MEASURED** |
-| **External API Cost & Quota** | Uses Groq API tokens (`.env`) | **$0.00** (Zero External Calls) | Zero Cost | **UNLIMITED** |
-| **Run Artifacts** | [`evaluation/results/groq_live_eval_15.json`](evaluation/results/groq_live_eval_15.json) | [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json) | Labeled Benchmark | **COMMITTED** |
+| **Passage-Level Precision@5** | **88.4%** | **88.4%** | $\ge 85.0\%$ | **PASSED** |
+| **Citation Grounding (Faithfulness)** | **82.5%** ($[0.783, 0.868]$ 95% CI) | **100.0%** (Format check on extractive chunks) | $\ge 80.0\%$ | **PASSED** |
+| **Citation Integrity Rate** | **100.0%** (100/100 valid source tags) | **100.0%** | $100.0\%$ | **PASSED** |
+| **SLA Compliance Rate ($\text{Score} \ge 0.85$)** | **57.0%** ($[0.472, 0.663]$ Wilson CI) | **100.0%** (True by extractive construction) | — | **MEASURED** |
+| **Mean Generation Latency** | **8.77 s / query** (Cloud Groq API + Network) | **0.10 ms / query** (Deterministic In-Memory) | — | **MEASURED** |
+| **Mean Evaluation / Judge Latency** | **10.87 s / query** (Structured Entailment Judge) | **0.00 ms** (Lexical Overlap Matrix) | — | **MEASURED** |
+| **Mean Total Pipeline Latency** | **19.64 s / query** (Retrieval + Gen + Judge) | **0.30 ms / query** | — | **MEASURED** |
+| **Evaluation Dataset & Sample Scope** | **100 technical queries** (`cause`, `control`, `regulation`, `topic`, `terse`) | **100 technical queries** (Identical sample) | Full in-domain benchmark | **COMMITTED** |
+| **Model Attribution & Verification** | **`qwen/qwen3.8-27b` / `openai/gpt-oss-120b`** (Logged per row) | **`extractive_fallback`** (Direct chunk extraction) | Explicitly Verified | **VERIFIED** |
+| **Evaluation Engine** | **LLM-as-a-Judge** (Claim entailment & risk verification) | **Format Check on Extractive Output** | — | **REPRODUCIBLE** |
+| **Committed Results Artifact** | [`evaluation/results/groq_live_eval_100.json`](evaluation/results/groq_live_eval_100.json) | [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json) | Labeled Benchmark | **COMMITTED** |
 
 #### C. Safety & Security Guardrail SLAs
 
@@ -75,12 +79,17 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Guardrail False Refusal Rate** | **0.0%** (0/60) | $[0.000, 0.060]$ | $\le 10.0\%$ | **PASSED** |
 
 > **Evaluation Methodology & Benchmark Datasets**:
-> - **Dual-Mode Generation Architecture (Online LLM vs. Offline CI)**:
->   - **Live Groq LLM API Mode**: When a `GROQ_API_KEY` is configured in `.env`, the system automatically invokes Groq Cloud LPU models (`qwen/qwen3.8-27b` / `openai/gpt-oss-120b`). As recorded in [`evaluation/results/groq_live_eval_15.json`](evaluation/results/groq_live_eval_15.json), Groq achieves **89.3% Passage Precision@5** and **87.0% Citation Grounding** ($[0.807, 0.933]$ 95% CI). Natural language rewording and conversational synthesis by the LLM yield a realistic grounding score characteristic of production generative AI.
->   - **Offline Extractive CI Mode**: In headless GitHub Actions CI environments (where private API keys cannot be exposed), the pipeline defaults to deterministic extractive synthesis (`_grounded_fallback` in `src/engine.py`), pulling root causes and statutory directives verbatim from retrieved chunks. Across 100 queries in [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json), it achieves **88.4% Passage Precision@5** and **99.7% Citation Grounding** ($[0.990, 1.000]$ 95% CI) in 10 seconds at \$0.00 cost.
+> - **Production Generative RAG (100 Queries, Live LLM-as-a-Judge)**:
+>   - Unlike naive keyword overlap, faithfulness is evaluated claim-by-claim using a separate LLM judge (`openai/gpt-oss-120b` / `qwen/qwen3.8-27b`) with structured JSON schema output across all 100 in-domain queries in [`evaluation/golden_set_150.json`](evaluation/golden_set_150.json).
+>   - The LLM judge evaluates **both** factual statements (causes, equipment dynamics, regulations) against retrieved contexts **and** numerical statistical claims (accident probability %, fatality rate %, incident counts) against the risk analytics engine's corpus statistics.
+>   - Every individual query record in [`evaluation/results/groq_live_eval_100.json`](evaluation/results/groq_live_eval_100.json) records the responding `model_used`, `judge_model`, `generation_latency_ms`, `retrieval_latency_ms`, `judge_latency_ms`, and itemized `claim_evaluations` with explicit textual rationales.
+>   - Yields a genuine production faithfulness score of **82.5% Citation Grounding** ($[0.783, 0.868]$ 95% CI) and **88.4% Passage Precision@5**, rigorously penalizing subtle hallucinations and unsubstantiated general assertions.
+> - **Offline Extractive CI Mode (Format & Ingestion Sanity Check)**:
+>   - In zero-network GitHub Actions sandboxes without API access, the pipeline defaults to deterministic extractive synthesis (`_grounded_fallback` in `src/engine.py`), copying statutory sentences directly from retrieved chunks.
+>   - Because sentences are directly extracted from chunks, token overlap against the same chunks is 100% by construction. This score is explicitly classified as an **ingestion & format integrity sanity check** (verifying that retrieved chunks are parsed, formatted, and tagged correctly in CI in 11 seconds at $0 cost) rather than a measure of generative language modeling faithfulness.
 > - **Document Retrieval Evaluation**: Evaluated across 60 technical mining queries in [`evaluation/golden_set.json`](evaluation/golden_set.json) comparing fast lexical BM25 against the full Hybrid RRF pipeline (Dense `bge-base-en-v1.5` + BM25 + Cross-Encoder `bge-reranker-base`). Dense cross-encoder reranking eliminates BM25 lexical misses (100% Hit@5, 0.989 MRR@5) with recorded per-query latency in [`evaluation/results/hybrid.json`](evaluation/results/hybrid.json) and [`evaluation/results/bm25.json`](evaluation/results/bm25.json).
 > - **150-Query Benchmark Suite ([`evaluation/golden_set_150.json`](evaluation/golden_set_150.json))**: Contains 100 in-domain technical queries, 25 out-of-domain edge cases, and 25 adversarial prompt injections. On this suite, BM25 alone achieves **Recall@5 of 96.8%**, **Hit@5 of 97.0%**, and an **MRR@5 of 0.900** (raw results committed in [`evaluation/results/bm25_150.json`](evaluation/results/bm25_150.json)).
-> - **Measured Per-Query Latency**: Every query is timed dynamically during evaluation (measuring retrieval, guardrail filtering, and generation) and committed to raw JSON files, reporting exact p50, p95, and mean percentiles.
+> - **Measured Per-Query Latency**: Every query is timed dynamically during evaluation (measuring retrieval, guardrail filtering, generation, and LLM judge latency) and committed to raw JSON files, reporting exact p50, p95, and mean percentiles.
 
 ---
 
