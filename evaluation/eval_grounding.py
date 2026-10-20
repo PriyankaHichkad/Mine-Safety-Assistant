@@ -28,6 +28,9 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from evaluation.metrics import wilson_interval, mean_confidence_interval  # noqa: E402
 
 STOPWORDS = {

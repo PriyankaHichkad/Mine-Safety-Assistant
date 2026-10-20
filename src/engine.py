@@ -4,6 +4,9 @@ import time
 import pickle
 from typing import List, Dict, Any, Optional
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
 from sentence_transformers import SentenceTransformer, CrossEncoder
@@ -340,9 +343,9 @@ class MineSafetyRiskAnalyzer:
 # ==========================================
 class OllamaLLMProvider:
     """Groq Cloud / Ollama API Provider."""
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama3"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "qwen/qwen3.8-27b"):
         self.base_url = base_url
-        self.model = model
+        self.model = os.getenv("GROQ_MODEL", model)
         self.timeout = 2
         self.api_key = os.getenv("GROQ_API_KEY", "")
         self.groq_client = None
@@ -355,16 +358,21 @@ class OllamaLLMProvider:
 
     def generate_response(self, system_prompt: str, user_prompt: str, model_name: Optional[str] = None) -> str:
         if self.groq_client:
-            try:
-                chat = self.groq_client.chat.completions.create(
-                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                    model="llama-3.3-70b-versatile",
-                    temperature=0.2,
-                    max_tokens=800
-                )
-                return chat.choices[0].message.content.strip()
-            except Exception:
-                pass
+            chosen = model_name or self.model or "qwen/qwen3.8-27b"
+            candidate_models = [chosen, "qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+            seen = set()
+            models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
+            for m in models_to_try:
+                try:
+                    chat = self.groq_client.chat.completions.create(
+                        messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                        model=m,
+                        temperature=0.2,
+                        max_tokens=800
+                    )
+                    return chat.choices[0].message.content.strip()
+                except Exception:
+                    continue
         return ""
 
 class MineMindRAGEngine:
