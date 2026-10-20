@@ -2,7 +2,7 @@
 
 **MineSafety-AI** is an enterprise-grade, domain-specific **Mine Safety & Accident Prevention Copilot** built using **LangChain LCEL**, **LangGraph StateGraph**, **Groq / Ollama LLMs**, **BM25 + Qdrant Hybrid Search**, and **DVC Data Version Control**.
 
-Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **6,880 clean, structured semantic chunks** across **1,324 official MSHA (Mine Safety and Health Administration) Fatality Investigation Reports (1995–2025)**, **DGMS Legislation (Coal Mines Regulations 2017, Metalliferous Mines Regulations 2017, Mines Act 1952)**, and **OSHA 29 CFR Health & Safety Standards**.
+Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **48,071 semantic chunks** across **1,324 official MSHA (Mine Safety and Health Administration) Fatality Investigation Reports (1995–2026)**, **DGMS Legislation (Coal Mines Regulations 2017, Metalliferous Mines Regulations 2017, Mines Act 1952)**, and **OSHA 29 CFR Health & Safety Standards**.
 
 ---
 
@@ -69,7 +69,7 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Mean Total Pipeline Latency** | **19.64 s / query** (Retrieval + Gen + Judge) | **20.46 ms / query** (1,324-doc Lexical Traversal) | — | **MEASURED** |
 | **Evaluation Dataset & Sample Scope** | **100 technical queries** (`cause`, `control`, `regulation`, `topic`, `terse`) | **100 technical queries** (Full 1,324-Report Corpus) | Full in-domain benchmark | **COMMITTED** |
 | **Model Attribution & Verification** | **`qwen/qwen3.8-27b` / `openai/gpt-oss-120b`** (Logged per row) | **`extractive_fallback`** (Direct chunk extraction) | Explicitly Verified | **VERIFIED** |
-| **Evaluation Engine** | **LLM-as-a-Judge** ([`eval_generation.py`](evaluation/eval_generation.py)) | **Format Check on Extractive Output** | Zero silent fallback, Cohen's $\kappa$ audit | **REPRODUCIBLE** |
+| **Evaluation Engine** | **LLM-as-a-Judge** ([`eval_generation.py`](evaluation/eval_generation.py)) | **Format Check on Extractive Output** | Zero silent fallback, deterministic verification | **REPRODUCIBLE** |
 | **Committed Results Artifact** | [`evaluation/results/groq_live_eval_100.json`](evaluation/results/groq_live_eval_100.json) | [`evaluation/results/grounding_eval.json`](evaluation/results/grounding_eval.json) | Labeled Benchmark | **COMMITTED** |
 
 #### C. Safety & Security Guardrail SLAs
@@ -81,11 +81,10 @@ Full run artifacts with per-query rankings and Wilson score confidence intervals
 | **Guardrail False Refusal Rate** | **0.0%** (0/60) | $[0.000, 0.060]$ | $\le 10.0\%$ | **PASSED** |
 
 > **Evaluation Methodology & Benchmark Datasets**:
-> - **Production Generative RAG (100 Queries, Live LLM-as-a-Judge)**:
->   - Unlike naive keyword overlap, faithfulness is evaluated claim-by-claim using a separate LLM judge (`openai/gpt-oss-120b` / `qwen/qwen3.8-27b`) with structured JSON schema output across all 100 in-domain queries in [`evaluation/golden_set_150.json`](evaluation/golden_set_150.json).
->   - The LLM judge evaluates **both** factual statements (causes, equipment dynamics, regulations) against retrieved contexts **and** numerical statistical claims (accident probability %, fatality rate %, incident counts) against the risk analytics engine's corpus statistics.
->   - Every individual query record in [`evaluation/results/groq_live_eval_100.json`](evaluation/results/groq_live_eval_100.json) records the responding `model_used`, `judge_model`, `generation_latency_ms`, `retrieval_latency_ms`, `judge_latency_ms`, and itemized `claim_evaluations` with explicit textual rationales.
->   - Yields a genuine production faithfulness score of **82.5% Citation Grounding** ($[0.783, 0.868]$ 95% CI) and **88.4% Passage Precision@5**, rigorously penalizing subtle hallucinations and unsubstantiated general assertions.
+> - **Production Generative RAG (100 Queries, Audited LLM-as-a-Judge)**:
+>   - Evaluated claim-by-claim using a separate LLM judge (`openai/gpt-oss-120b` / `qwen/qwen3.8-27b`) with structured JSON output across the 100 in-domain queries in [`evaluation/golden_set_150.json`](evaluation/golden_set_150.json).
+>   - **Strict Factual vs. Numerical Separation**: Unstructured factual statements (accident causes, equipment mechanics, statutory rules) are evaluated strictly against retrieved passages without outside knowledge, yielding **75.3% Strict Factual Grounding** ($[0.709, 0.794]$ 95% Bootstrap CI; 81.4% lenient). Statistical assertions ($P(\text{Accident})$, $P(\text{Fatality})$) are verified deterministically against the dynamic risk analyzer, achieving **93.2% Numerical Consistency** (150/161 claims).
+>   - **Transparent Accounting**: Every query in [`evaluation/results/groq_live_eval_100.json`](evaluation/results/groq_live_eval_100.json) logs `model_used`, `judge_model`, and per-claim rationales. Transient rate-limit fallbacks (29 extractive answers) are explicitly isolated from LLM headline scoring via `n_fallback_excluded` in [`eval_generation.py`](evaluation/eval_generation.py).
 > - **Offline Extractive CI Mode (Format & Ingestion Sanity Check)**:
 >   - In zero-network GitHub Actions sandboxes without API access, the pipeline defaults to deterministic extractive synthesis (`_grounded_fallback` in `src/engine.py`), copying statutory sentences directly from retrieved chunks.
 >   - Because sentences are directly extracted from chunks, token overlap against the same chunks is 100% by construction. This score is explicitly classified as an **ingestion & format integrity sanity check** (verifying that retrieved chunks are parsed, formatted, and tagged correctly in CI in 11 seconds at $0 cost) rather than a measure of generative language modeling faithfulness.
@@ -204,6 +203,9 @@ python scripts/run_eval_ci.py
 
 # 2. Citation grounding & passage-level precision gate (Faithfulness & Relevance SLAs)
 python scripts/run_grounding_eval_ci.py
+
+# 3. Live LLM Generation & Strict Grounding Benchmark (requires GROQ_API_KEY)
+python evaluation/eval_generation.py --sample 100 --retriever bm25
 ```
 
 ### 4. Launch Streamlit Web Application
