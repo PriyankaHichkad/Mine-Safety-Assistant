@@ -105,9 +105,11 @@ class LangGraphMineSafetyEngine:
         return {"prevention_plan": res["answer"], "citations": res["citations"], "entities": res.get("entities", {}), "telemetry": telemetry}
 
     def run_safety_query(self, query: str, model_override: Optional[str] = None, human_approved: bool = False) -> Dict[str, Any]:
+        t_start = time.perf_counter()
         guard_res = self.guardrails.check_input(query)
         if not guard_res["passed"]:
-            return {"query": query, "answer": guard_res["reason"], "citations": [], "retrieved_docs": [], "prelevance_passed": False, "telemetry": {"total_latency_ms": 1.0, "llm_used": "Input Guardrail Refusal"}}
+            lat = round((time.perf_counter() - t_start) * 1000, 2)
+            return {"query": query, "answer": guard_res["reason"], "citations": [], "retrieved_docs": [], "prelevance_passed": False, "telemetry": {"total_latency_ms": lat, "llm_used": "Input Guardrail Refusal"}}
 
         cached = self.cache.get(query)
         if cached:
@@ -115,9 +117,10 @@ class LangGraphMineSafetyEngine:
 
         if "emergency stop" in query.lower() or "halt mine" in query.lower():
             tool_res = issue_emergency_stop_directive("SITE-ALPHA-01", reason=query, human_approved=human_approved)
+            lat = round((time.perf_counter() - t_start) * 1000, 2)
             if tool_res["status"] == "gated_approval_required":
-                return {"query": query, "answer": f"**HIGH-IMPACT EMERGENCY ACTION DETECTED**\n\n{tool_res['message']}\n\n*Please click 'Confirm & Issue Emergency Stop Order' in the UI below to authorize this directive.*", "citations": [], "requires_human_approval": True, "telemetry": {"total_latency_ms": 5.0, "llm_used": "Emergency Router"}}
-            return {"query": query, "answer": f"**EMERGENCY DIRECTIVE EXECUTED**\n\n{tool_res['message']}", "citations": [], "requires_human_approval": False, "telemetry": {"total_latency_ms": 12.0, "llm_used": "Emergency Tool"}}
+                return {"query": query, "answer": f"**HIGH-IMPACT EMERGENCY ACTION DETECTED**\n\n{tool_res['message']}\n\n*Please click 'Confirm & Issue Emergency Stop Order' in the UI below to authorize this directive.*", "citations": [], "requires_human_approval": True, "telemetry": {"total_latency_ms": lat, "llm_used": "Emergency Router"}}
+            return {"query": query, "answer": f"**EMERGENCY DIRECTIVE EXECUTED**\n\n{tool_res['message']}", "citations": [], "requires_human_approval": False, "telemetry": {"total_latency_ms": lat, "llm_used": "Emergency Tool"}}
 
         initial_state: MineSafetyState = {
             "raw_query": query, "query": query, "tier": "", "intent": "", "requires_human_approval": False, "target_tool": None,

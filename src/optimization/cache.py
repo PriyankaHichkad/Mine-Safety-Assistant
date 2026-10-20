@@ -16,17 +16,19 @@ class SemanticQueryCache:
         return hashlib.sha256(clean_q.encode("utf-8")).hexdigest()
 
     def get(self, query: str) -> Optional[Dict[str, Any]]:
+        t0 = time.perf_counter()
         q_hash = self._hash_query(query)
         entry = self.cache.get(q_hash)
         
         if entry:
             if time.time() - entry["timestamp"] <= self.ttl_seconds:
+                elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
                 res = dict(entry["response"])
                 res["telemetry"] = dict(res.get("telemetry", {}))
-                res["telemetry"]["total_latency_ms"] = 8.5
-                res["telemetry"]["retrieval_latency_ms"] = 1.2
-                res["telemetry"]["generation_latency_ms"] = 0.5
-                res["telemetry"]["llm_used"] = "Semantic Query Cache (Sub-10ms)"
+                res["telemetry"]["total_latency_ms"] = max(elapsed_ms, 0.05)
+                res["telemetry"]["retrieval_latency_ms"] = 0.0
+                res["telemetry"]["generation_latency_ms"] = 0.0
+                res["telemetry"]["llm_used"] = "Semantic Query Cache"
                 return res
             else:
                 del self.cache[q_hash]
