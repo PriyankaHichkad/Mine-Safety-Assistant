@@ -360,7 +360,8 @@ class OllamaLLMProvider:
         self.timeout = 2
         self.api_key = os.getenv("GROQ_API_KEY", "")
         self.groq_client = None
-        self.last_model_used = None
+        self.last_model_used = ""      # model that produced the most recent response ("" = none)
+        self.last_attempts = []        # [(model, "ok" | error class)] for the most recent call
         self.last_error = None
         if self.api_key:
             try:
@@ -370,7 +371,8 @@ class OllamaLLMProvider:
                 pass
 
     def generate_response(self, system_prompt: str, user_prompt: str, model_name: Optional[str] = None) -> str:
-        self.last_model_used = None
+        self.last_model_used = ""
+        self.last_attempts = []
         self.last_error = None
         if self.groq_client:
             chosen = model_name or self.model or "qwen/qwen3.8-27b"
@@ -385,10 +387,12 @@ class OllamaLLMProvider:
                         temperature=0.2,
                         max_tokens=800
                     )
+                    self.last_attempts.append((m, "ok"))
                     self.last_model_used = m
                     return chat.choices[0].message.content.strip()
-                except Exception as e:
-                    self.last_error = str(e)
+                except Exception as exc:
+                    self.last_attempts.append((m, type(exc).__name__))
+                    self.last_error = str(exc)
                     continue
         return ""
 
@@ -472,15 +476,14 @@ class MineMindRAGEngine:
 
         start_gen = time.time()
         if model_override == "extractive":
-            generated_text = self._grounded_fallback(query, filtered, risk)
-            model_used = "extractive_fallback"
+            generated_text = ""
         else:
             generated_text = self.ollama.generate_response("You are MineSafety-AI.", formatted_prompt, model_name=model_override)
-            if generated_text:
-                model_used = self.ollama.last_model_used or "groq_api"
-            else:
-                generated_text = self._grounded_fallback(query, filtered, risk)
-                model_used = "extractive_fallback"
+
+        used_fallback = not generated_text
+        if used_fallback:
+            generated_text = self._grounded_fallback(query, filtered, risk)
+        model_used = "extractive_fallback" if used_fallback else self.ollama.last_model_used
 
         gen_ms = (time.time() - start_gen) * 1000
         total_ms = (time.time() - start_total) * 1000
@@ -490,13 +493,17 @@ class MineMindRAGEngine:
             "answer": generated_text,
             "citations": citations,
             "entities": entities,
+            "risk": risk,
+            "retrieved": [{"content": it["chunk"]["content"], "metadata": it["chunk"].get("metadata", {})} for it in filtered],
             "model_used": model_used,
             "telemetry": {
                 "total_latency_ms": round(total_ms, 2),
                 "retrieval_latency_ms": round(ret_ms, 2),
                 "generation_latency_ms": round(gen_ms, 2),
                 "num_contexts_used": len(filtered),
-                "llm_used": model_used
+                "llm_used": model_used,
+                "used_fallback": used_fallback,
+                "llm_attempts": list(self.ollama.last_attempts),
             }
         }
 
