@@ -6,7 +6,7 @@ Designed for Mining Engineers, Safety Officers, and Field Miners, it indexes **4
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 Mine-Safety-Assistant/
@@ -33,7 +33,7 @@ Mine-Safety-Assistant/
 
 ---
 
-## 📊 Results, Empirical Benchmarks & Tradeoffs
+## Results, Empirical Benchmarks & Tradeoffs
 
 ### 1. Empirical Benchmark Results (Golden Evaluation Suite)
 
@@ -132,7 +132,7 @@ On the 60 in-domain evaluation queries, sparse BM25 encountered **3 retrieval mi
 
 ---
 
-## 🌟 Key Architectural Features
+## Key Architectural Features
 
 1. **Streamlined Modular Architecture (`src/`)**:
    - **`src/engine.py`**: Consolidated Document Chunker, Hybrid Vector/BM25 Indexer, Domain Entity Extractor (Hypothesis A), Cross-Encoder Reranker, Mathematical Risk Analytics Engine, and LangChain `PromptTemplate` RAG Engine.
@@ -162,7 +162,7 @@ On the 60 in-domain evaluation queries, sparse BM25 encountered **3 retrieval mi
 
 ---
 
-## 🛠️ System Architecture
+## System Architecture
 
 ```text
 +-----------------------+      +-------------------+      +-----------------------+
@@ -180,7 +180,7 @@ On the 60 in-domain evaluation queries, sparse BM25 encountered **3 retrieval mi
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### 1. Clone & Install Dependencies
 ```bash
@@ -213,23 +213,4 @@ python evaluation/eval_generation.py --sample 100 --retriever bm25
 python -m streamlit run ui/streamlit_app.py
 ```
 Open **`http://localhost:8501`** in your browser!
-
----
-
-## 🔍 Interview Defense & Technical Clarifications
-
-This section provides exact technical reconciliations between resume summary metrics, live evaluation artifacts, and production architecture for interview defense:
-
-| Review Finding / Question | Resume / Headline Claim | Production Artifact / Implementation | Technical Interview Defense |
-| :--- | :---: | :---: | :--- |
-| **Finding 1: Citation Grounding Metric Reconciliation** | **94.7% Citation Grounding** | **75.3% Strict Factual Grounding** ([`groq_live_eval_100.json`](evaluation/results/groq_live_eval_100.json))<br>**100.0% Citation Integrity** | *“The 94.7% metric on my resume was measured during initial baseline citation verification on labeled reference sets (`scripts/run_grounding_eval_ci.py`). In production evaluation ([`eval_generation.py`](evaluation/eval_generation.py)), we separately deployed a strict LLM-as-a-judge NLI audit across 100 queries without allowing external knowledge, establishing **75.3% Strict Factual Grounding** ($[0.709, 0.794]$ 95% Bootstrap CI) for complex narrative claims, **93.2% Numerical Consistency** on risk calculations, and **100% Citation Integrity** on source tag linkage. We report both: structural citation linkage (94.7% / 100%) and strict NLI entailment (75.3%).”* |
-| **Finding 2: Corpus Scope & Chunk Count** | **6,880+ Chunks** | **48,071 Semantic Chunks** in Qdrant<br>**1,324 MSHA Reports** via DVC | *“My resume cites 6,880+ chunks representing the initial core reference indexing baseline across primary DGMS statutory acts, safety circulars, and core MSHA investigation reports. In the full production repository, we expanded ingestion via DVC to encompass all 1,324 scraped historical MSHA investigation reports (1995–2026), indexing **48,071 semantic vector chunks** in local Qdrant (`./data/qdrant_db`). The small-corpus retrieval results (`n_docs: 38`, `n_chunks: 38`) in the initial benchmark correspond to the golden reference subset used to evaluate exact statutory IR metrics.”* |
-| **Finding 3: Statistical Risk Metric Definition** | **$P(\text{Accident})$ & $P(\text{Fatality})$** | **Corpus Incident Prevalence Ratio** & **Fatality Proportion** | *“The statistical risk analyzer outputs the **Corpus Historical Incident Category Prevalence** ($N_{\text{hazard}} / N_{\text{total}}$) and **Historical Fatality Proportion** ($F_{\text{hazard}} / N_{\text{hazard}}$) across the 1,324 MSHA fatality reports. These metrics are descriptive historical incident proportions from the ingested corpus rather than forward-looking calibrated site-specific probabilities. They provide miners with concrete historical incident prevalence data for specific equipment and hazards.”* |
-| **Finding 4: Relevance Thresholding & Abstention** | **Relevance Threshold Filtering** | **`min_relevance_threshold = 0.01`** with clean abstention | *“Cross-encoder reranking produces relevance logits. If no retrieved passage scores above `min_relevance_threshold = 0.01`, the system abstains with an explicit low-relevance response rather than fabricating or forcing an ungrounded answer. In the LangGraph workflow, queries failing relevance checks route to our production discovery loop to capture emerging edge cases.”* |
-| **Finding 5: LangGraph Retrieval Efficiency** | **End-to-End LangGraph DAG** | **Single-Pass Retrieval** via `MineSafetyState` | *“In `src/workflow.py`, retrieved passages from the `hybrid_retrieve` node are preserved in the `MineSafetyState` and passed directly as `retrieved_override` into `rag_engine.answer_query()`. This eliminates redundant retrieval passes and guarantees that the exact passages evaluated by the guardrail are identical to those supplied to the generation prompt.”* |
-| **Finding 6: Entity Extraction Methodology** | **Mining Entity Extractor** | **Deterministic Lexical Scope Lock** (`MiningEntityExtractor`) | *“The `MiningEntityExtractor` in `src/engine.py` was purposefully designed as a lightweight, deterministic lexical entity normalizer and scope-locking module rather than a heavy transformer token-classification model. This achieves sub-millisecond execution latency with zero hallucinations and zero GPU memory overhead, which is critical for real-time guardrail filtering in low-latency industrial environments.”* |
-| **Finding 7: Document Chunking Strategy** | **Structure-Aware Chunker** | **PDF Page-Level** + **TXT 500-Word Sliding Window** | *“We utilize a dual chunking strategy in `MiningDocumentChunker`: PDF regulatory documents (CMR, OMR, OSHA) are chunked on strict page boundaries to preserve exact statutory pagination and tabular formatting for legal citation traceability, while continuous narrative TXT incident reports are chunked with a 500-word sliding window (50-word overlap) for granular narrative retrieval.”* |
-| **Finding 8: Benchmark Retriever Modes** | **Hybrid RRF vs. Fast BM25** | **BM25 for Latency Isolation**<br>**Hybrid for Full 100% Hit@5** | *“In `groq_live_eval_100.json`, evaluation was run with BM25 retrieval to isolate LLM generation latency and judge evaluation throughput from CPU-bound cross-encoder inference. The hybrid retrieval pipeline (Dense + BM25 + Cross-Encoder) was benchmarked independently across 60 queries in `hybrid.json`, achieving 100% Hit@5 and 0.989 MRR@5.”* |
-| **Finding 12: Emergency Directive Safety Scope** | **Emergency Stop Gating** | **Simulated Prototype** + Immutable Audit Log | *“The emergency stop directive tool in `src/tools/safety_tools.py` demonstrates architectural human-in-the-loop safety gating. Directives are written to an immutable audit trail (`data/production_audit_logs.jsonl`) only after explicit operator sign-off; the tool is an architectural safety prototype and is not connected to physical mine PLCs or SCADA control systems.”* |
-| **Finding 10: Local SLM Offline Fallback** | **Offline SLM Capability** | **Local Ollama HTTP Endpoint** (`localhost:11434`) | *“For edge deployments in underground operations without external cloud connectivity, `OllamaLLMProvider` automatically falls back to local SLM execution (`http://localhost:11434/api/generate`), ensuring full offline capability when Groq Cloud API keys are unavailable.”* |
 
