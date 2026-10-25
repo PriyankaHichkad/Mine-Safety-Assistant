@@ -10,6 +10,7 @@ from pydantic import BaseModel
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.engine import MineMindHybridRetriever, MineMindRAGEngine
+from src.guardrails import SafetyGuardrails
 
 app = FastAPI(
     title="MineMind Mining AI & Regulatory Compliance API",
@@ -29,9 +30,10 @@ app.add_middleware(
 # Global telemetry logs
 QUERY_TELEMETRY_LOGS: List[Dict[str, Any]] = []
 
-# Global RAG Engine instance
+# Global RAG Engine & Guardrails instance
 retriever = None
 rag_engine = None
+guardrails = SafetyGuardrails()
 
 @app.on_event("startup")
 def startup_event():
@@ -66,6 +68,10 @@ def search_mining_docs(req: QueryRequest):
     if not retriever:
         raise HTTPException(status_code=500, detail="Retriever not initialized. Run ingestion script.")
     
+    guard_res = guardrails.check_input(req.query)
+    if not guard_res["passed"]:
+        raise HTTPException(status_code=400, detail=guard_res["reason"])
+    
     start_time = time.time()
     results = retriever.search(query=req.query, top_k=req.top_k, final_top_m=req.top_m)
     latency_ms = (time.time() - start_time) * 1000
@@ -82,13 +88,42 @@ def query_rag_engine(req: QueryRequest):
     if not rag_engine:
         raise HTTPException(status_code=500, detail="RAG Engine not initialized. Run ingestion script.")
     
+    guard_res = guardrails.check_input(req.query)
+    if not guard_res["passed"]:
+        refusal_response = {
+            "query": req.query,
+            "answer": guard_res["reason"],
+            "citations": [],
+            "entities": {},
+            "risk": {},
+            "retrieved": [],
+            "model_used": "Input Guardrail Refusal",
+            "telemetry": {
+                "total_latency_ms": 0.0,
+                "retrieval_latency_ms": 0.0,
+                "generation_latency_ms": 0.0,
+                "num_contexts_used": 0,
+                "llm_used": "Input Guardrail Refusal",
+                "used_fallback": False,
+                "llm_attempts": [],
+                "guardrail_status": "refused",
+                "guardrail_reason": guard_res["reason"]
+            }
+        }
+        QUERY_TELEMETRY_LOGS.append({
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "query": req.query,
+            "telemetry": refusal_response["telemetry"]
+        })
+        return refusal_response
+
     response = rag_engine.answer_query(req.query)
     
     # Store telemetry log
     QUERY_TELEMETRY_LOGS.append({
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "query": req.query,
-        "telemetry": response["telemetry"]
+        "telemetry": response.get("telemetry", {})
     })
     
     return response

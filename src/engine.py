@@ -17,7 +17,12 @@ from langchain_core.prompts import PromptTemplate
 # 1. DOMAIN NAMED ENTITY EXTRACTOR (HYPOTHESIS A)
 # ==========================================
 class MiningEntityExtractor:
-    """Hypothesis A: Domain Named Entity Extractor for Zero-Hallucination Scope Lock."""
+    """Domain Named Entity Normalizer & Lexical Scope Lock.
+    
+    NOTE: This is a fast, deterministic rule-based lexical entity normalizer and scope-locking
+    module designed for zero-hallucination domain filtering and prompt constraint enforcement,
+    not a statistical token-classification transformer NER model.
+    """
     def __init__(self):
         self.equipment_patterns = {
             "shuttle car": ["shuttle car", "shuttlecar", "shuttle"],
@@ -82,7 +87,14 @@ class MiningEntityExtractor:
 # 2. DOCUMENT CHUNKER & INDEXER
 # ==========================================
 class MiningDocumentChunker:
-    """Structure-aware chunker for PDF & TXT mining literature."""
+    """Structure-aware chunker for PDF & TXT mining literature.
+    
+    Chunking strategy:
+    - PDF documents: Page-level chunking (1 chunk per page) preserving exact regulatory
+      pagination, tables, and section headings for precise legal citations.
+    - TXT / raw reports: Word-level sliding window (default: 500 words with 50-word overlap)
+      for granular retrieval of continuous incident narratives.
+    """
     def __init__(self, chunk_size: int = 500, overlap: int = 50):
         self.chunk_size = chunk_size
         self.overlap = overlap
@@ -283,7 +295,15 @@ class MineMindHybridRetriever:
 # 4. DYNAMIC STATISTICAL RISK ANALYZER
 # ==========================================
 class MineSafetyRiskAnalyzer:
-    """Calculates empirical hazard prevalence & fatality distribution over ingested incident report corpus."""
+    """Calculates empirical hazard prevalence & fatality distribution over ingested incident report corpus.
+    
+    METRIC DEFINITIONS:
+    - prob_accident_occurrence: Empirical Corpus Incident Prevalence Ratio (N_hazard / N_total)
+      among indexed historical reports. This is a descriptive historical sample statistic, not a
+      forward-looking calibrated predictive probability for a specific operating mine.
+    - prob_fatality_given_accident: Empirical Fatal Outcome Proportion (F_hazard / N_hazard)
+      among historical reports matching this hazard category in the MSHA fatality and incident corpus.
+    """
     def __init__(self, reports_dir: str = "./data/msha_reports"):
         self.reports_dir = reports_dir
         self._cached_texts = []
@@ -394,6 +414,34 @@ class OllamaLLMProvider:
                     self.last_attempts.append((m, type(exc).__name__))
                     self.last_error = str(exc)
                     continue
+
+        # Fallback to local Ollama instance (Offline SLM)
+        try:
+            import json
+            import urllib.request
+            ollama_model = "llama3.2" if "llama" in (self.model or "").lower() else "qwen2.5:7b"
+            payload = json.dumps({
+                "model": ollama_model,
+                "prompt": f"System: {system_prompt}\nUser: {user_prompt}",
+                "stream": False,
+                "options": {"temperature": 0.2, "num_predict": 800}
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                f"{self.base_url}/api/generate",
+                data=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                text = data.get("response", "").strip()
+                if text:
+                    self.last_model_used = f"ollama/{ollama_model}"
+                    self.last_attempts.append((self.last_model_used, "ok"))
+                    return text
+        except Exception as exc:
+            self.last_attempts.append(("ollama/local", type(exc).__name__))
+            if not self.last_error:
+                self.last_error = str(exc)
         return ""
 
 class MineMindRAGEngine:
@@ -438,16 +486,46 @@ class MineMindRAGEngine:
             ]
         )
 
-    def answer_query(self, query: str, model_override: Optional[str] = None) -> Dict[str, Any]:
+    def answer_query(
+        self,
+        query: str,
+        model_override: Optional[str] = None,
+        retrieved_override: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
         start_total = time.time()
         risk = self.risk_analyzer.calculate_hazard_risk(query)
         entities = self.entity_extractor.extract_entities(query)
 
         start_ret = time.time()
-        retrieved = self.retriever.search(query=query, top_k=20, final_top_m=5)
-        ret_ms = (time.time() - start_ret) * 1000
+        if retrieved_override is not None:
+            retrieved = retrieved_override
+            ret_ms = 0.0
+        else:
+            retrieved = self.retriever.search(query=query, top_k=20, final_top_m=5)
+            ret_ms = (time.time() - start_ret) * 1000
 
-        filtered = [item for item in retrieved if item.get("rerank_score", -5.0) >= self.min_relevance_threshold or len(retrieved) > 0] or retrieved[:3]
+        # Enforce minimum relevance threshold (no unconditional bypass)
+        filtered = [item for item in retrieved if item.get("rerank_score", 1.0) >= self.min_relevance_threshold]
+        if not filtered:
+            total_ms = (time.time() - start_total) * 1000
+            return {
+                "query": query,
+                "answer": "No sufficiently relevant mining safety regulations or documentation were found above the relevance threshold to answer your query safely.",
+                "citations": [],
+                "entities": entities,
+                "risk": risk,
+                "retrieved": [],
+                "model_used": "Abstained (Low Relevance)",
+                "telemetry": {
+                    "total_latency_ms": round(total_ms, 2),
+                    "retrieval_latency_ms": round(ret_ms, 2),
+                    "generation_latency_ms": 0.0,
+                    "num_contexts_used": 0,
+                    "llm_used": "Abstained (Low Relevance)",
+                    "used_fallback": False,
+                    "llm_attempts": [],
+                }
+            }
         filtered = filtered[:3]
 
         context_blocks, citations = [], []

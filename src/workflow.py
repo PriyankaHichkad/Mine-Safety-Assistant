@@ -92,16 +92,20 @@ class LangGraphMineSafetyEngine:
 
     def _node_safety_guardrail(self, state: MineSafetyState) -> Dict[str, Any]:
         docs = state.get("retrieved_docs", [])
-        passed = (docs[0].get("rerank_score", 0.0) >= 0.01 if docs else False) or len(docs) > 0
+        passed = (docs[0].get("rerank_score", 0.0) >= 0.01) if docs else False
         if not passed:
             self.discovery_loop.capture_emerging_edge_case(state["raw_query"])
             return {"prelevance_passed": False, "prevention_plan": "I could not find relevant mining safety regulations to answer your query.", "citations": []}
         return {"prelevance_passed": True}
 
     def _node_generate_plan(self, state: MineSafetyState) -> Dict[str, Any]:
-        res = self.rag_engine.answer_query(state["raw_query"], model_override=state.get("model_override"))
+        res = self.rag_engine.answer_query(
+            state["raw_query"],
+            model_override=state.get("model_override"),
+            retrieved_override=state.get("retrieved_docs")
+        )
         telemetry = state.get("telemetry", {})
-        telemetry.update(res["telemetry"])
+        telemetry.update(res.get("telemetry", {}))
         return {"prevention_plan": res["answer"], "citations": res["citations"], "entities": res.get("entities", {}), "telemetry": telemetry}
 
     def run_safety_query(self, query: str, model_override: Optional[str] = None, human_approved: bool = False) -> Dict[str, Any]:

@@ -68,7 +68,8 @@ def log_incident_audit_entry(site_id: str, hazard_type: str, details: str) -> Di
 
 def issue_emergency_stop_directive(site_id: str, reason: str, human_approved: bool = False) -> Dict[str, Any]:
     """
-    High-Impact Write Tool: Issues an emergency mine stop directive.
+    High-Impact Write Tool: Issues a simulated emergency mine stop directive logged to local audit log.
+    (Safety prototype: Requires human sign-off; not connected to physical industrial control / PLC / SCADA systems).
     Blast radius: HIGH. MUST be gated on human safety officer approval!
     """
     if not human_approved:
@@ -87,7 +88,8 @@ def issue_emergency_stop_directive(site_id: str, reason: str, human_approved: bo
         "site_id": site_id,
         "reason": reason,
         "approved_by": "Human Safety Officer",
-        "status": "EXECUTED_IMMEDIATELY"
+        "status": "EXECUTED_IMMEDIATELY",
+        "system_type": "simulated_safety_prototype"
     }
     
     with open(AUDIT_LOG_FILE, "a") as f:
@@ -96,5 +98,5 @@ def issue_emergency_stop_directive(site_id: str, reason: str, human_approved: bo
     return {
         "status": "executed",
         "directive_id": directive["directive_id"],
-        "message": f"🚨 EMERGENCY STOP DIRECTIVE EXECUTED for site '{site_id}'. Reason: {reason}."
+        "message": f"🚨 SIMULATED EMERGENCY STOP DIRECTIVE LOGGED for site '{site_id}' (safety prototype logged to audit trail; requires physical operator confirmation; not connected to physical PLC/SCADA). Reason: {reason}."
     }
