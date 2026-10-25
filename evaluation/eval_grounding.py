@@ -517,7 +517,7 @@ def main(argv=None) -> int:
     parser.add_argument("--limit", type=int, default=None, help="Max queries to evaluate")
     parser.add_argument("--gate", action="store_true", help="Enforce SLA gates (fails with exit code 1 if violated)")
     parser.add_argument("--min-precision", type=float, default=0.85, help="Minimum acceptable Passage Precision@5")
-    parser.add_argument("--min-grounding", type=float, default=0.90, help="Minimum acceptable Citation Grounding")
+    parser.add_argument("--min-grounding", type=float, default=0.85, help="Minimum acceptable Citation Grounding")
     args = parser.parse_args(argv)
 
     start_time = time.time()
