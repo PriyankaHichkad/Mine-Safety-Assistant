@@ -329,6 +329,13 @@ def run_grounding_evaluation(
 
     chunker = MiningDocumentChunker()
     chunks = []
+    if not os.path.isdir(reports_dir) or not os.listdir(reports_dir):
+        try:
+            from scripts.scrape_msha_accidents import generate_full_msha_library
+            generate_full_msha_library()
+        except Exception:
+            pass
+
     if os.path.isdir(reports_dir):
         for fname in sorted(os.listdir(reports_dir)):
             if fname.endswith((".txt", ".pdf")):

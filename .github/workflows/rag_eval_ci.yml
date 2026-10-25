@@ -32,4 +32,5 @@ jobs:
           PYTHONUNBUFFERED: "1"
           TOKENIZERS_PARALLELISM: "false"
         run: |
+          python scripts/scrape_msha_accidents.py
           python scripts/run_grounding_eval_ci.py
